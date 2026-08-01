@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.local
+*.log
+
+# Capacitor native projects are generated; keep them out until they carry
+# hand-edited native config.
+apps/web/ios/
+apps/web/android/
+
+# Playwright
+test-results/
+playwright-report/
