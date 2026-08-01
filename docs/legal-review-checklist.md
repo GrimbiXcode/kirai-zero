@@ -36,6 +36,12 @@ Nur noch drei Fragen, und keine davon ist dringend:
 3. Genügt der Restore-Prozess (Benachrichtigung aller Betroffenen per Mail,
    Hinweis auf erneute Löschung) als Umgang mit gelöschten Konten in
    Sicherungen?
+4. **Personen-Profile:** Nutzende können private Notizen über andere führen —
+   über Menschen ohne Konto und über bestätigte Freunde. Genügt eine generische
+   Aussage in der Datenschutzerklärung der Informationspflicht nach Art. 14, oder
+   braucht es eine Mitteilung an die betroffene Person? Und trägt Art. 15 Abs. 4
+   die Entscheidung, diese Notizen bei einer Auskunft nicht herauszugeben, weil
+   sie die private Einschätzung samt Urheber offenlegen würden?
 
 ### 3. Dokumente und Verträge
 

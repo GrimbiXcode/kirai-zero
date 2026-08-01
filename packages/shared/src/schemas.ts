@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  ASSERTION_STATUSES,
   ITEM_KINDS,
   STANCES,
   VISIBILITIES,
@@ -11,6 +12,7 @@ export const itemKindSchema = z.enum(ITEM_KINDS);
 export const stanceSchema = z.enum(STANCES);
 export const visibilitySchema = z.enum(VISIBILITIES);
 export const friendRequestStatusSchema = z.enum(FRIEND_REQUEST_STATUSES);
+export const assertionStatusSchema = z.enum(ASSERTION_STATUSES);
 
 const emailSchema = z
   .string()
@@ -86,6 +88,33 @@ export type FriendRequestCreateInput = z.infer<
   typeof friendRequestCreateSchema
 >;
 
+const displayNameSchema = z.string().trim().min(1).max(60);
+
+export const personCreateSchema = z.object({
+  displayName: displayNameSchema,
+  note: z.string().trim().max(280).optional(),
+});
+export type PersonCreateInput = z.infer<typeof personCreateSchema>;
+
+export const personUpdateSchema = z
+  .object({
+    displayName: displayNameSchema.optional(),
+    note: z.string().trim().max(280).nullable().optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, "empty_update");
+export type PersonUpdateInput = z.infer<typeof personUpdateSchema>;
+
+/** A note about a person carries no visibility: it is private by construction,
+ *  there is nobody it could be shared with. */
+export const personEntryUpsertSchema = z.object({
+  stance: stanceSchema,
+  note: z.string().trim().max(280).optional(),
+});
+export type PersonEntryUpsertInput = z.infer<typeof personEntryUpsertSchema>;
+
+export const personLinkSchema = z.object({ handle: handleSchema });
+export type PersonLinkInput = z.infer<typeof personLinkSchema>;
+
 export const uuidParamSchema = z.object({ id: z.uuid() });
 export const itemIdParamSchema = z.object({ itemId: z.uuid() });
 export const userIdParamSchema = z.object({ userId: z.uuid() });
@@ -127,11 +156,44 @@ export interface PreferenceDto {
  *  private entries are filtered server-side and never reach the client. */
 export type SharedPreferenceDto = Omit<PreferenceDto, "visibility">;
 
+/**
+ * One thing a user believes about someone else. `status` is present only when
+ * the person profile is linked to an account — there is nothing to compare an
+ * unlinked profile against.
+ */
+export interface PersonEntryDto {
+  id: string;
+  item: ItemDto;
+  stance: (typeof STANCES)[number];
+  note: string | null;
+  status: (typeof ASSERTION_STATUSES)[number] | null;
+  updatedAt: string;
+}
+
+export interface PersonDto {
+  id: string;
+  displayName: string;
+  note: string | null;
+  /** The friend this profile stands for, or null while it is just a name. */
+  linkedUser: PublicUser | null;
+  entryCount: number;
+  createdAt: string;
+}
+
+export interface PersonDetailDto extends PersonDto {
+  entries: PersonEntryDto[];
+}
+
 export interface FriendProfileDto {
   user: PublicUser;
   friendsSince: string;
   likes: SharedPreferenceDto[];
   dislikes: SharedPreferenceDto[];
+  /** What the viewer privately believes about this friend. Kept apart from
+   *  their own entries so a guess never reads as a fact. */
+  myNotes: PersonEntryDto[];
+  /** Container holding those notes; null until the viewer writes the first. */
+  personId: string | null;
 }
 
 export interface FriendRequestDto {

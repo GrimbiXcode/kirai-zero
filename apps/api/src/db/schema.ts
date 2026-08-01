@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -186,7 +187,81 @@ export const friendships = pgTable(
   ],
 );
 
+/**
+ * A private profile one user keeps about someone else — a grandmother who is
+ * not in the app, or a friend they want to jot guesses about. Visible to the
+ * owner and to nobody else, ever.
+ *
+ * `linkedUserId` turns it into "these are my notes about that account". It is
+ * nulled when the friendship ends or the account is deleted, which leaves the
+ * owner their notes without keeping an identified link to a person they are no
+ * longer connected to.
+ */
+export const persons = pgTable(
+  "persons",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    displayName: text("display_name").notNull(),
+    note: text("note"),
+    linkedUserId: uuid("linked_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("persons_owner_idx").on(table.ownerId),
+    // At most one profile per (owner, linked account) — partial, because any
+    // number of unlinked profiles may of course exist side by side.
+    uniqueIndex("persons_owner_linked_key")
+      .on(table.ownerId, table.linkedUserId)
+      .where(sql`${table.linkedUserId} is not null`),
+  ],
+);
+
+/**
+ * What the owner believes about that person. No `visibility` column on
+ * purpose: these are private by construction, there is nobody they could be
+ * shared with.
+ */
+export const personEntries = pgTable(
+  "person_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    personId: uuid("person_id")
+      .notNull()
+      .references(() => persons.id, { onDelete: "cascade" }),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => items.id, { onDelete: "cascade" }),
+    stance: stanceEnum("stance").notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("person_entries_person_item_key").on(
+      table.personId,
+      table.itemId,
+    ),
+    index("person_entries_person_idx").on(table.personId),
+  ],
+);
+
 export type UserRow = typeof users.$inferSelect;
+export type PersonRow = typeof persons.$inferSelect;
+export type PersonEntryRow = typeof personEntries.$inferSelect;
 export type ItemRow = typeof items.$inferSelect;
 export type PreferenceRow = typeof preferences.$inferSelect;
 export type SessionRow = typeof sessions.$inferSelect;

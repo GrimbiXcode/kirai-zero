@@ -31,6 +31,35 @@ async function addPreference(
   await expect(dialog).toBeHidden();
 }
 
+async function logout(page: Page) {
+  await page.getByRole("link", { name: "Einstellungen" }).click();
+  await page.getByRole("button", { name: "Abmelden" }).click();
+  await expect(page.getByRole("heading", { name: "Anmelden" })).toBeVisible();
+}
+
+async function login(page: Page, handle: string) {
+  await page.getByLabel("E-Mail").fill(`${handle}@example.org`);
+  await page.getByLabel("Passwort").fill(PASSWORD);
+  await page.getByRole("button", { name: "Anmelden" }).click();
+  await expect(page.getByRole("heading", { name: "Meine Listen" })).toBeVisible();
+}
+
+/** Same flow as addPreference, but inside a person's notes block, which has no
+ *  visibility control. */
+async function addNote(
+  page: Page,
+  search: string,
+  itemName: string,
+  stance: string,
+) {
+  await page.getByLabel("Etwas eintragen").fill(search);
+  await page.getByRole("button", { name: new RegExp(itemName) }).first().click();
+  const dialog = page.getByRole("dialog", { name: itemName });
+  await dialog.getByRole("button", { name: stance, exact: true }).click();
+  await dialog.getByRole("button", { name: "Speichern" }).click();
+  await expect(dialog).toBeHidden();
+}
+
 test("two people become friends and see each other's lists", async ({
   page,
 }) => {
@@ -143,4 +172,69 @@ test("a member can export their data and delete their account", async ({
   await page.getByLabel("Passwort").fill(PASSWORD);
   await page.getByRole("button", { name: "Anmelden" }).click();
   await expect(page.getByRole("alert")).toBeVisible();
+});
+
+test("a private profile can be linked and then shows what holds up", async ({
+  page,
+}) => {
+  const suffix = Date.now().toString(36);
+  const annaHandle = `panna${suffix}`;
+  const benHandle = `pben${suffix}`;
+
+  // --- Ben records his own preferences ---
+  await register(page, benHandle, "Ben");
+  await addPreference(page, "Koriander", "Koriander", "Mag ich nicht");
+  await addPreference(page, "Bücher", "Bücher", "Mag ich nicht");
+  await addPreference(page, "Lakritz", "Lakritz", "Mag ich nicht", {
+    visibility: "Nur für mich",
+  });
+  await logout(page);
+
+  // --- Anna keeps a private profile about Ben before he is even a friend ---
+  await register(page, annaHandle, "Anna");
+  await page.getByRole("link", { name: "Freunde" }).click();
+  await page.getByPlaceholder("z.B. Oma Trudi").fill("Ben vom Kurs");
+  await page.getByRole("button", { name: "Anlegen" }).click();
+  await page.getByRole("link", { name: "Person öffnen" }).click();
+
+  await addNote(page, "Koriander", "Koriander", "Mag ich nicht");
+  await addNote(page, "Bücher", "Bücher", "Liebe ich");
+  await addNote(page, "Lakritz", "Lakritz", "Mag ich nicht");
+
+  // Nothing to compare against yet, so no badge may show. Exact matches: the
+  // surrounding hints legitimately contain the word "bestätigt".
+  await expect(page.getByText("Bestätigt", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Unbestätigt", { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/bestätigte Freundschaft/)).toBeVisible();
+
+  // --- They become friends, then Anna links the profile ---
+  await page.getByRole("link", { name: "Freunde" }).click();
+  await page.getByPlaceholder("Benutzername").fill(benHandle);
+  await page.getByRole("button", { name: "Suchen" }).click();
+  await page.getByRole("button", { name: "Anfrage senden" }).click();
+  await expect(page.getByText("Anfrage gesendet")).toBeVisible();
+  await logout(page);
+
+  await login(page, benHandle);
+  await page.getByRole("link", { name: "Freunde" }).click();
+  await page.getByRole("button", { name: "Annehmen" }).click();
+  await expect(page.getByText(`@${annaHandle}`)).toBeVisible();
+  await logout(page);
+
+  await login(page, annaHandle);
+  await page.getByRole("link", { name: "Freunde" }).click();
+  await page.getByRole("link", { name: "Person öffnen" }).click();
+  await page.getByLabel(/Mit einem Freund verknüpfen/).selectOption(benHandle);
+  await page.getByRole("button", { name: "Verknüpfen" }).click();
+  await expect(page.getByText(`Verknüpft mit @${benHandle}`)).toBeVisible();
+
+  const koriander = page.getByText("Koriander").locator("xpath=ancestor::li[1]");
+  const buecher = page.getByText("Bücher").locator("xpath=ancestor::li[1]");
+  const lakritz = page.getByText("Lakritz").locator("xpath=ancestor::li[1]");
+
+  await expect(koriander.getByText("Bestätigt", { exact: true })).toBeVisible();
+  await expect(buecher.getByText("Widerspricht")).toBeVisible();
+  // Ben keeps his liquorice to himself, so the guess must stay unconfirmed —
+  // linking may not reveal what the profile would not.
+  await expect(lakritz.getByText("Unbestätigt", { exact: true })).toBeVisible();
 });

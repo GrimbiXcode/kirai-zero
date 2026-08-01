@@ -42,3 +42,31 @@ export function isPositive(stance: Stance): boolean {
 export function isNegative(stance: Stance): boolean {
   return stance === "dislike";
 }
+
+/**
+ * How a private note about someone holds up against what that person has
+ * recorded themselves. Only meaningful for a person profile linked to an
+ * account — an unlinked one has nothing to compare against.
+ */
+export const ASSERTION_STATUSES = [
+  "confirmed",
+  "contradicted",
+  "unconfirmed",
+] as const;
+export type AssertionStatus = (typeof ASSERTION_STATUSES)[number];
+
+/**
+ * Compares a guess with what the person says, by direction rather than by
+ * exact value: guessing "love" where they said "like" is agreement, not a
+ * contradiction. `theirs` is null when the person has no entry for the item —
+ * or has one they keep private, which must look exactly the same from here.
+ */
+export function compareStance(
+  mine: Stance,
+  theirs: Stance | null,
+): AssertionStatus {
+  if (theirs === null) return "unconfirmed";
+  const direction = (stance: Stance) =>
+    isPositive(stance) ? 1 : isNegative(stance) ? -1 : 0;
+  return direction(mine) === direction(theirs) ? "confirmed" : "contradicted";
+}

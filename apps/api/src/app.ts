@@ -14,6 +14,7 @@ import type { AuthenticatedUser } from "./lib/sessions";
 import { accountRoutes } from "./routes/account";
 import { authRoutes } from "./routes/auth";
 import { itemRoutes } from "./routes/items";
+import { personRoutes } from "./routes/persons";
 import { preferenceRoutes } from "./routes/preferences";
 import { socialRoutes } from "./routes/social";
 
@@ -128,6 +129,7 @@ export async function buildApp({
   await app.register(itemRoutes, { prefix: "/api/items" });
   await app.register(preferenceRoutes, { prefix: "/api/me/preferences" });
   await app.register(accountRoutes, { prefix: "/api/me" });
+  await app.register(personRoutes, { prefix: "/api/persons" });
   await app.register(socialRoutes, { prefix: "/api" });
 
   return app;

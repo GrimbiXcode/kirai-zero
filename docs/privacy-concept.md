@@ -94,6 +94,47 @@ die App legt es weder nahe noch strukturiert sie es.
 | **Löschung** | Bei Kontolöschung wird der Autorenverweis auf NULL gesetzt; der Eintrag bleibt, weil andere Personen ihn in ihren Listen verwenden |
 | **Tabelle** | `items` |
 
+### V6 — Personen und Notizen
+
+| | |
+|---|---|
+| **Zweck** | Festhalten, was man über andere zu wissen glaubt — auch über Menschen ohne Konto |
+| **Datenkategorien** | Selbst gewählter Anzeigename, optionale Notiz, Verweise auf Katalogeinträge mit Haltung, optionaler Verweis auf ein Konto |
+| **Betroffene** | Der Ersteller **und die Person, um die es geht** |
+| **Rechtsgrundlage** | Art. 6 Abs. 1 lit. b DSGVO, Art. 31 Abs. 2 lit. a revDSG |
+| **Empfänger** | Keine. Ein Personen-Profil ist ausschliesslich für seinen Ersteller sichtbar |
+| **Löschung** | Jederzeit durch den Ersteller, vollständig mit dessen Konto |
+| **Tabellen** | `persons`, `person_entries` |
+
+**Das sind Daten über Dritte.** Anders als überall sonst in der Anwendung
+stammen sie nicht von der betroffenen Person. Bei einem unverknüpften Profil
+handelt es sich um einen frei gewählten Namen ohne weitere Identifikatoren;
+sobald es mit einem Konto verknüpft ist, um eine identifizierte Person. Daraus
+folgen zwei Fragen, die vor Produktivstart anwaltlich zu klären sind:
+
+- **Art. 14 DSGVO** — Informationspflicht, wenn Daten nicht bei der betroffenen
+  Person erhoben wurden. Aktuell vorgesehen: eine generische Aussage in der
+  Datenschutzerklärung, dass Freunde private Notizen führen können, statt einer
+  Mitteilung pro Verknüpfung.
+- **Art. 15 DSGVO** — Auskunft. Eine Herausgabe würde die private Einschätzung
+  samt Urheber offenlegen; Art. 15 Abs. 4 hält fest, dass die Auskunft die
+  Rechte anderer nicht beeinträchtigen darf. Die Abwägung gehört dokumentiert.
+
+**Was die Umsetzung von sich aus begrenzt:**
+
+- Nur ein Anzeigename. Keine E-Mail, keine Telefonnummer, kein Geburtsdatum —
+  ein unverknüpftes Profil identifiziert niemanden ausserhalb des Kopfes seines
+  Erstellers.
+- Verknüpfen geht **nur mit bestätigten Freunden**. Über Unbeteiligte lässt
+  sich kein Konto-Bezug herstellen.
+- Der Abgleich verschafft **keinen zusätzlichen Einblick**: er läuft nur unter
+  Freunden und nur über Einträge, die ohnehin für Freunde sichtbar sind. Ein
+  privat gehaltener Eintrag ist von einem fehlenden nicht zu unterscheiden.
+- Endet die Freundschaft oder wird das verknüpfte Konto gelöscht, fällt die
+  Verknüpfung weg. Die Notizen bleiben, der Konto-Bezug nicht.
+- Die Notizen stehen im Export ihres Erstellers und verschwinden mit dessen
+  Konto.
+
 ## Betroffenenrechte
 
 | Recht | Umsetzung |

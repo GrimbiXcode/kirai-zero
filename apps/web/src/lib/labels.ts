@@ -1,4 +1,4 @@
-import type { ItemKind, Stance, Visibility } from "shared";
+import type { AssertionStatus, ItemKind, Stance, Visibility } from "shared";
 import { t } from "../i18n";
 
 // The enum values double as the second half of their translation key, so a new
@@ -7,3 +7,5 @@ export const kindLabel = (kind: ItemKind): string => t(`kind.${kind}`);
 export const stanceLabel = (stance: Stance): string => t(`lists.stance.${stance}`);
 export const visibilityLabel = (visibility: Visibility): string =>
   t(`lists.visibility.${visibility}`);
+export const statusLabel = (status: AssertionStatus): string =>
+  t(`persons.status.${status}`);

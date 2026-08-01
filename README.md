@@ -14,6 +14,11 @@ Geschenke.
   optionale Notiz, Sichtbarkeit pro Eintrag — ohne Angabe von Gründen
 - Freundschaftsanfragen senden, annehmen, ablehnen, beenden
 - Das Profil einer befreundeten Person ansehen
+- Private Profile für Menschen anlegen, die (noch) kein Konto haben, und
+  festhalten, was man über sie zu wissen glaubt — sichtbar nur für einen selbst
+- Ein solches Profil mit dem Konto eines Freundes verknüpfen: die eigenen
+  Vermutungen werden dann als bestätigt, widersprechend oder unbestätigt
+  ausgewiesen
 - Eigene Daten exportieren und das Konto sofort löschen
 
 Läuft als Webapp/PWA und, über Capacitor aus derselben Codebasis, als App für
@@ -97,6 +102,13 @@ mag. Ein Eintrag sagt nur: bekomme ich das vorgesetzt oder geschenkt, esse ich
 es nicht bzw. werfe es weg. Damit werden weder Gesundheitsdaten noch Angaben
 zur Weltanschauung erhoben — es gibt keine besonderen Kategorien nach Art. 9
 DSGVO, keine Einwilligung und keine Altersschranke.
+
+**Notizen über andere.** Personen-Profile enthalten Angaben über Menschen, die
+sie selbst nicht gemacht haben. Deshalb: nur ein frei gewählter Anzeigename,
+keine weiteren Identifikatoren; verknüpft wird nur mit bestätigten Freunden;
+der Abgleich zeigt nichts, was das Freundesprofil nicht ohnehin zeigt. Die
+Pflichten nach Art. 14 und 15 DSGVO stehen als offene Frage in der
+Prüf-Checkliste.
 
 **Fristen.** Sitzungen längstens 30 Tage. Beim Löschen des Kontos enden Zugriff
 und Sichtbarkeit sofort; ein stündlicher Job entfernt die Daten endgültig

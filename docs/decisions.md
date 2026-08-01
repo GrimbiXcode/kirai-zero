@@ -173,3 +173,40 @@ Kein Code: die App verschickt im Normalbetrieb keine E-Mails, und ein Restore
 ist ein seltener, manueller Vorgang. Ein Mailversand dafür aufzubauen hiesse,
 einen weiteren Auftragsverarbeiter einzuführen — für einen Fall, der von Hand
 ohnehin begleitet wird.
+
+## 13. Ein Behälter für beide Fälle, Status berechnet statt gespeichert
+
+Ein Personen-Profil ist die private Notizsammlung eines Nutzers über einen
+Menschen. Ob dieser Mensch ein Konto hat, ist eine Eigenschaft dieses
+Behälters (`linked_user_id`) und kein eigener Typ. Damit deckt dasselbe Modell
+beide Wege ab: die Grossmutter ohne Konto, die sich später vielleicht
+registriert, und der Freund, dem man ohne Umweg Vermutungen anhängt. Ein
+registriertes Konto kann so mit n Profilen verknüpft sein — eines je Freund,
+der Notizen über es führt.
+
+**Der Abgleich wird bei jedem Lesen berechnet**, nicht beim Verknüpfen
+gespeichert. Ein Flag wäre am Tag darauf falsch, sobald die Person den Eintrag
+selbst nachträgt. Verglichen wird die Richtung, nicht der exakte Wert: «Liebe
+ich» gegen «Mag ich» ist Zustimmung. Neben *bestätigt* und *unbestätigt* gibt
+es *widerspricht* — genau der Fall, in dem das Handeln nach der eigenen
+Vermutung den Schaden anrichtet, den die App verhindern soll. Ihn als
+«unbestätigt» zu verstecken wäre die schlechtere Antwort.
+
+**Der Abgleich verschafft keinen Einblick.** Er läuft nur unter Freunden und
+nur über Einträge mit `visibility = 'friends'`. Ein privat gehaltener Eintrag
+der Person ist von einem fehlenden nicht zu unterscheiden — sonst wäre das
+Verknüpfen ein Weg, mehr zu sehen als auf dem Freundesprofil. Dafür gibt es je
+einen Test in `persons.test.ts` und im E2E-Durchlauf.
+
+**Verknüpfen setzt eine bestätigte Freundschaft voraus**, und die Verknüpfung
+endet mit ihr. Ohne Beziehung wäre sie eine Behauptung über jemanden, zu dem
+gar kein Kontakt besteht, und sie würde ohnehin keinen Abgleich liefern. Beim
+Entfreunden und beim Löschen des verknüpften Kontos fällt sie weg; die Notizen
+bleiben, denn sie sind die Daten ihres Erstellers. Preis: nach einer erneuten
+Freundschaft muss man neu verknüpfen.
+
+**Was die App über Dritte weiss, bleibt minimal.** Ein unverknüpftes Profil
+besteht aus einem frei gewählten Anzeigenamen — keine E-Mail, keine Nummer,
+kein Geburtsdatum. Die Pflichten nach Art. 14 und 15 DSGVO sind damit nicht
+erledigt, aber klein gehalten; sie stehen als offene Frage in
+`docs/legal-review-checklist.md`.

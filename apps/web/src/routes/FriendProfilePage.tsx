@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
-import { useFriendProfile } from "../api/hooks";
+import { useFriendProfile, usePersonForFriend } from "../api/hooks";
+import { PersonNotes } from "../components/PersonNotes";
 import { PreferenceRow } from "../components/PreferenceRow";
 import { Spinner } from "../components/Spinner";
 import { t } from "../i18n";
@@ -7,6 +8,7 @@ import { t } from "../i18n";
 export function FriendProfilePage() {
   const { userId = "" } = useParams();
   const profile = useFriendProfile(userId);
+  const openNotes = usePersonForFriend();
 
   if (profile.isPending) return <Spinner label={t("common.loading")} />;
 
@@ -23,7 +25,7 @@ export function FriendProfilePage() {
     );
   }
 
-  const { user, likes, dislikes } = profile.data;
+  const { user, likes, dislikes, myNotes, personId } = profile.data;
 
   return (
     <div className="space-y-6">
@@ -80,6 +82,37 @@ export function FriendProfilePage() {
           )}
         </section>
       </div>
+
+      {/* Kept apart from the two columns above on purpose: what the friend says
+          about themselves and what the viewer guesses must never blur. */}
+      <section aria-labelledby="my-notes-heading" className="border-t border-line pt-6">
+        <h2
+          id="my-notes-heading"
+          className="mb-1 text-sm font-semibold tracking-wide text-muted uppercase"
+        >
+          {t("persons.notes", { name: user.displayName })}
+        </h2>
+        <p className="mb-3 text-sm text-muted">
+          {t("persons.notesIntro", { name: user.displayName })}
+        </p>
+
+        {personId ? (
+          <PersonNotes
+            personId={personId}
+            entries={myNotes}
+            subjectName={user.displayName}
+          />
+        ) : (
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={openNotes.isPending}
+            onClick={() => openNotes.mutate(userId)}
+          >
+            {t("lists.add")}
+          </button>
+        )}
+      </section>
     </div>
   );
 }

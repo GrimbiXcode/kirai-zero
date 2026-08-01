@@ -14,6 +14,7 @@ import {
   friendRequests,
   friendships,
   items,
+  persons,
   preferences,
   users,
 } from "../db/schema";
@@ -25,6 +26,7 @@ import {
   orderedPair,
   requireFriendship,
 } from "../lib/friendship";
+import { loadPersonEntries } from "../lib/persons";
 import { selectPreferenceColumns } from "../lib/queries";
 import { parse } from "../lib/validate";
 
@@ -305,11 +307,34 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     await requireFriendship(app.db, viewer.id, userId);
 
     const [userAId, userBId] = orderedPair(viewer.id, userId);
-    await app.db
-      .delete(friendships)
-      .where(
-        and(eq(friendships.userAId, userAId), eq(friendships.userBId, userBId)),
-      );
+    await app.db.transaction(async (tx) => {
+      await tx
+        .delete(friendships)
+        .where(
+          and(
+            eq(friendships.userAId, userAId),
+            eq(friendships.userBId, userBId),
+          ),
+        );
+      // A link only means anything while the connection exists. Both sides
+      // keep their own notes; what goes is the association with an identified
+      // account, on both sides of the friendship.
+      await tx
+        .update(persons)
+        .set({ linkedUserId: null, updatedAt: new Date() })
+        .where(
+          or(
+            and(
+              eq(persons.ownerId, viewer.id),
+              eq(persons.linkedUserId, userId),
+            ),
+            and(
+              eq(persons.ownerId, userId),
+              eq(persons.linkedUserId, viewer.id),
+            ),
+          ),
+        );
+    });
     return { ok: true };
   });
 
@@ -352,11 +377,28 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
     const likes = shared.filter((entry) => isPositive(entry.stance));
     const dislikes = shared.filter((entry) => isNegative(entry.stance));
 
+    // The viewer's own guesses about this friend, kept in their own block so
+    // they can never be mistaken for what the friend actually said.
+    const ownNotes = await app.db
+      .select({
+        id: persons.id,
+        ownerId: persons.ownerId,
+        linkedUserId: persons.linkedUserId,
+      })
+      .from(persons)
+      .where(
+        and(eq(persons.ownerId, viewer.id), eq(persons.linkedUserId, userId)),
+      )
+      .limit(1);
+    const notePerson = ownNotes[0];
+
     return {
       user: toPublicUser(owner),
       friendsSince: friendship.createdAt.toISOString(),
       likes,
       dislikes,
+      myNotes: notePerson ? await loadPersonEntries(app.db, notePerson) : [],
+      personId: notePerson?.id ?? null,
     };
   });
 }
