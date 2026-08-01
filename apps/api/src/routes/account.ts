@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { asc, eq, inArray, or } from "drizzle-orm";
 import {
@@ -5,6 +6,7 @@ import {
   friendships,
   items,
   preferences,
+  sessions,
   users,
 } from "../db/schema";
 import { authenticate, currentUser } from "../lib/auth";
@@ -129,14 +131,55 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
   });
 
   /**
-   * Art. 17 GDPR, executed immediately rather than flagged for later: sessions,
-   * preferences, friendships and requests are removed by cascade. Catalogue
-   * items this user contributed stay, with the authorship dropped — deleting
-   * them would silently break other people's preference lists.
+   * Art. 17 GDPR. The row is marked and erased by the next housekeeping run
+   * (see lib/housekeeping.ts), well inside the 24 hours the privacy concept
+   * promises. Nothing survives that window in a usable form:
+   *
+   * - the identifying fields are overwritten right here, which also frees the
+   *   handle and the email address for reuse and makes signing in impossible
+   * - sessions, friendships and friend requests are deleted outright, so
+   *   visibility to other people ends in the same transaction
+   *
+   * What is left — the marked row and the preferences hanging off it — is
+   * unreachable: the friend profile route needs a friendship and the own list
+   * needs a session, and neither exists any more.
    */
   app.delete("/", async (request, reply) => {
     const viewer = currentUser(request);
-    await app.db.delete(users).where(eq(users.id, viewer.id));
+
+    await app.db.transaction(async (tx) => {
+      const now = new Date();
+      await tx
+        .update(users)
+        .set({
+          deletedAt: now,
+          updatedAt: now,
+          email: `deleted-${viewer.id}@invalid`,
+          handle: `deleted_${viewer.id}`,
+          displayName: "Gelöschtes Konto",
+          passwordHash: `deleted-${randomBytes(32).toString("base64url")}`,
+        })
+        .where(eq(users.id, viewer.id));
+
+      await tx.delete(sessions).where(eq(sessions.userId, viewer.id));
+      await tx
+        .delete(friendships)
+        .where(
+          or(
+            eq(friendships.userAId, viewer.id),
+            eq(friendships.userBId, viewer.id),
+          ),
+        );
+      await tx
+        .delete(friendRequests)
+        .where(
+          or(
+            eq(friendRequests.fromUserId, viewer.id),
+            eq(friendRequests.toUserId, viewer.id),
+          ),
+        );
+    });
+
     reply.clearCookie(SESSION_COOKIE, { path: "/" });
     return { ok: true };
   });

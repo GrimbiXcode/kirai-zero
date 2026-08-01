@@ -74,6 +74,8 @@ export function preference(overrides: Record<string, unknown> = {}) {
     reason: "taste",
     note: null,
     visibility: "friends",
+    consentedAt: null,
+    consentVersion: null,
     updatedAt: "2026-01-01T10:00:00.000Z",
     ...overrides,
   };

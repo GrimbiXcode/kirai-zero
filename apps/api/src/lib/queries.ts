@@ -11,6 +11,8 @@ export const selectPreferenceColumns = {
   reason: preferences.reason,
   note: preferences.note,
   visibility: preferences.visibility,
+  consentedAt: preferences.consentedAt,
+  consentVersion: preferences.consentVersion,
   updatedAt: preferences.updatedAt,
   item: {
     id: items.id,

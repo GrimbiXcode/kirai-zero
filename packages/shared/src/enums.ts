@@ -55,7 +55,36 @@ export function isNegative(stance: Stance): boolean {
 /**
  * Health-driven reasons are non-negotiable for a host, unlike a matter of
  * taste. Callers use this to sort and highlight them separately.
+ *
+ * Deliberately narrower than `isSpecialCategory`: this is about danger at the
+ * dinner table, not about data protection law.
  */
 export function isHealthCritical(reason: Reason): boolean {
   return reason === "allergy" || reason === "intolerance";
 }
+
+/**
+ * Reasons that put an entry into a special category under Art. 9(1) GDPR
+ * (and Art. 5 lit. c revDSG): allergies and intolerances are health data,
+ * religious and ethical motives reveal religious or philosophical beliefs.
+ *
+ * Storing any of these needs the explicit consent of the person — regardless
+ * of visibility, because Art. 9 restricts the processing itself and not only
+ * the disclosure to friends.
+ */
+export function isSpecialCategory(reason: Reason): boolean {
+  return (
+    reason === "allergy" ||
+    reason === "intolerance" ||
+    reason === "religious" ||
+    reason === "ethical"
+  );
+}
+
+/**
+ * Identifies the wording someone consented to. Stored alongside the consent so
+ * that a later change to the text does not silently reinterpret consent that
+ * was given for an earlier version. Bump this whenever the consent text in the
+ * client changes in substance.
+ */
+export const CONSENT_VERSION = "art9-2026-08";

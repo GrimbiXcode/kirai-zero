@@ -1,13 +1,18 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
+import { createHash } from "node:crypto";
 import { eq, or, sql as raw } from "drizzle-orm";
+import { CONSENT_VERSION } from "shared";
 import {
   friendRequests,
   friendships,
   items,
   preferences,
   sessions,
+  users,
 } from "../src/db/schema";
+import { purgeDeletedAccounts } from "../src/lib/housekeeping";
+import { sessionExpiry } from "../src/lib/sessions";
 import {
   befriend,
   createTestApp,
@@ -79,6 +84,28 @@ describe("data export", () => {
     expect(response.body).not.toContain(ben.email);
   });
 
+  it("includes the consent record for special-category entries", async () => {
+    const erdnuesse = await findItemId(app, anna, "Erdnüsse");
+    await setPreference(app, anna, erdnuesse, {
+      stance: "avoid",
+      reason: "allergy",
+      consentGiven: true,
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/me/export",
+      headers: anna.auth,
+    });
+
+    // Art. 15 covers the consent too: a person must be able to see what they
+    // agreed to and when.
+    const entry = response.json().preferences[0];
+    expect(entry.reason).toBe("allergy");
+    expect(entry.consentVersion).toBe(CONSENT_VERSION);
+    expect(entry.consentedAt).toEqual(expect.any(String));
+  });
+
   it("is limited to the requesting account", async () => {
     const koriander = await findItemId(app, anna, "Koriander");
     await setPreference(app, anna, koriander, { stance: "avoid" });
@@ -98,6 +125,78 @@ describe("data export", () => {
 });
 
 describe("account deletion", () => {
+  it("cuts off access and visibility the moment it is requested", async () => {
+    const koriander = await findItemId(app, anna, "Koriander");
+    await setPreference(app, anna, koriander, { stance: "avoid" });
+    await befriend(app, anna, ben);
+
+    await app.inject({ method: "DELETE", url: "/api/me", headers: anna.auth });
+
+    // Ben must lose sight of Anna immediately, not when the purge job runs.
+    const profile = await app.inject({
+      method: "GET",
+      url: `/api/friends/${anna.id}/profile`,
+      headers: ben.auth,
+    });
+    expect(profile.statusCode).toBe(404);
+
+    const friends = await app.inject({
+      method: "GET",
+      url: "/api/friends",
+      headers: ben.auth,
+    });
+    expect(friends.json().friends).toHaveLength(0);
+
+    const session = await app.inject({
+      method: "GET",
+      url: "/api/auth/me",
+      headers: anna.auth,
+    });
+    expect(session.statusCode).toBe(401);
+  });
+
+  it("refuses a session that appears after the account was marked", async () => {
+    await app.inject({ method: "DELETE", url: "/api/me", headers: anna.auth });
+
+    // Belt and braces for the guard in resolveSession: even a session created
+    // out of band must not authenticate a marked account.
+    const token = "handmade-token-for-a-deleted-account";
+    await app.db.insert(sessions).values({
+      userId: anna.id,
+      tokenHash: createHash("sha256").update(token).digest("hex"),
+      expiresAt: sessionExpiry(),
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/auth/me",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it("erases the marked row and its data on the next housekeeping run", async () => {
+    const koriander = await findItemId(app, anna, "Koriander");
+    await setPreference(app, anna, koriander, { stance: "avoid" });
+    await app.inject({ method: "DELETE", url: "/api/me", headers: anna.auth });
+
+    const purged = await purgeDeletedAccounts(app.db);
+    expect(purged).toBe(1);
+
+    const [remainingUsers, remainingPreferences] = await Promise.all([
+      app.db.select({ id: users.id }).from(users).where(eq(users.id, anna.id)),
+      app.db
+        .select({ id: preferences.id })
+        .from(preferences)
+        .where(eq(preferences.userId, anna.id)),
+    ]);
+    expect(remainingUsers).toHaveLength(0);
+    expect(remainingPreferences).toHaveLength(0);
+
+    // A second run finds nothing left to do.
+    expect(await purgeDeletedAccounts(app.db)).toBe(0);
+  });
+
   it("removes every trace of the account", async () => {
     const koriander = await findItemId(app, anna, "Koriander");
     await setPreference(app, anna, koriander, { stance: "avoid" });
@@ -109,6 +208,7 @@ describe("account deletion", () => {
       headers: anna.auth,
     });
     expect(deleted.statusCode).toBe(200);
+    await purgeDeletedAccounts(app.db);
 
     const [prefs, links, requests, openSessions] = await Promise.all([
       app.db
@@ -188,6 +288,7 @@ describe("account deletion", () => {
     await setPreference(app, ben, itemId, { stance: "love" });
 
     await app.inject({ method: "DELETE", url: "/api/me", headers: anna.auth });
+    await purgeDeletedAccounts(app.db);
 
     const rows = await app.db
       .select()

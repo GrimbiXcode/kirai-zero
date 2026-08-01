@@ -74,3 +74,47 @@ Eine weitere Sprache ist eine zusätzliche Datei mit demselben Typ.
 verwenden Imports im gesamten Repository **keine** `.js`-Endungen —
 `moduleResolution: "bundler"` erwartet das so, und drizzle-kit kann die
 Endungen beim Laden des Schemas nicht auf `.ts` zurückführen.
+
+## 9. Einwilligung als Schranke, nicht als Hinweis
+
+Art. 9 Abs. 2 lit. a DSGVO verlangt eine *ausdrückliche* Einwilligung, und der
+EDSA versteht darunter eine ausdrückliche Erklärung — nicht bloss eine
+eindeutige bestätigende Handlung. Ein Hinweistext, der beim Auswählen des
+Grundes mitläuft, ist keine Erklärung. Deshalb blockiert eine eigene,
+unvorbelegte Checkbox das Speichern, und der Server weist einen Eintrag ohne
+`consentGiven` mit `consent_required` ab.
+
+Betroffen sind vier Gründe, nicht zwei: `religious` und `ethical` fallen unter
+«religiöse oder weltanschauliche Überzeugungen» und stehen in Art. 9 Abs. 1
+gleichrangig neben Gesundheitsdaten. `isHealthCritical` bleibt davon
+unberührt — das steuert weiterhin nur die Hervorhebung im Freundesprofil, wo es
+um Gefahr am Esstisch geht und nicht um Rechtsgrundlagen. Für die
+Einwilligungspflicht gibt es `isSpecialCategory`.
+
+Die Prüfung hängt nicht an der Sichtbarkeit. Art. 9 beschränkt das Verarbeiten,
+nicht erst das Weitergeben; ein privat gehaltener Allergie-Eintrag braucht die
+Einwilligung genauso.
+
+Nicht auflösbar bleibt, dass sich solche Merkmale nach EuGH C-184/20 auch
+ableiten lassen — «kein Schweinefleisch» kann eine Überzeugung offenbaren, ohne
+dass jemand `religious` wählt. Das wird im Einwilligungstext benannt, damit die
+Einwilligung wenigstens informiert ist.
+
+## 10. Löschen: markieren, sofort entziehen, dann räumen
+
+Zugesagt sind 24 Stunden bis zur endgültigen Löschung. Statt weiterhin direkt
+hart zu löschen, markiert `DELETE /api/me` die Zeile und ein stündlicher Job
+räumt sie ab. Das macht die Löschung zu einem beobachtbaren Vorgang und passt
+zur Backup-Aufbewahrung.
+
+Der Preis wäre ein Zeitfenster, in dem die Daten noch da sind — deshalb
+passiert in derselben Transaktion alles, was Zugriff und Sichtbarkeit ausmacht:
+Identifikatoren werden überschrieben (Anmeldung unmöglich, Handle sofort wieder
+frei), Sitzungen, Freundschaften und Anfragen werden gelöscht. Was
+zurückbleibt, ist über keine Route mehr erreichbar, weil das Freundesprofil
+eine Freundschaft und die eigene Liste eine Sitzung verlangt.
+
+Eine Wiederherstellung innerhalb des Fensters gibt es bewusst nicht: sie würde
+verlangen, dass die Freundschaften bestehen bleiben, und damit müsste jede
+Abfrage gelöschte Konten ausfiltern — viel mehr Fläche für ein Leck als der
+Nutzen wert ist.

@@ -26,6 +26,10 @@ async function addPreference(
   await dialog.getByRole("button", { name: stance, exact: true }).click();
   if (options.reason) {
     await dialog.getByRole("button", { name: options.reason }).click();
+    // Special-category reasons block saving until consent is given, which is
+    // the behaviour the app has to have — so the flow has to give it.
+    const consent = dialog.getByRole("checkbox");
+    if (await consent.isVisible()) await consent.check();
   }
   if (options.visibility) {
     await dialog.getByRole("button", { name: options.visibility }).click();

@@ -39,6 +39,7 @@ export function MyListsPage() {
       reason: draft.reason,
       note: draft.note.trim() === "" ? undefined : draft.note.trim(),
       visibility: draft.visibility,
+      consentGiven: draft.consentGiven,
     });
   }
 

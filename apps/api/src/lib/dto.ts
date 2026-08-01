@@ -40,7 +40,14 @@ export function toItemDto(row: ItemRow | Omit<ItemRow, "createdBy" | "createdAt"
 
 type PreferenceWithItem = Pick<
   PreferenceRow,
-  "id" | "stance" | "reason" | "note" | "visibility" | "updatedAt"
+  | "id"
+  | "stance"
+  | "reason"
+  | "note"
+  | "visibility"
+  | "consentedAt"
+  | "consentVersion"
+  | "updatedAt"
 > & { item: ItemDto };
 
 export function toPreferenceDto(row: PreferenceWithItem): PreferenceDto {
@@ -51,15 +58,23 @@ export function toPreferenceDto(row: PreferenceWithItem): PreferenceDto {
     reason: row.reason,
     note: row.note,
     visibility: row.visibility,
+    consentedAt: row.consentedAt?.toISOString() ?? null,
+    consentVersion: row.consentVersion,
     updatedAt: row.updatedAt.toISOString(),
   };
 }
 
-/** Drops `visibility` — a viewer has no business knowing how the owner
- *  classified the entry, only that they were allowed to see it. */
+/** Drops `visibility` and the consent record — a viewer has no business
+ *  knowing how the owner classified the entry or when they agreed to store
+ *  it, only that they were allowed to see it. */
 export function toSharedPreferenceDto(
   row: PreferenceWithItem,
 ): SharedPreferenceDto {
-  const { visibility: _visibility, ...rest } = toPreferenceDto(row);
+  const {
+    visibility: _visibility,
+    consentedAt: _consentedAt,
+    consentVersion: _consentVersion,
+    ...rest
+  } = toPreferenceDto(row);
   return rest;
 }

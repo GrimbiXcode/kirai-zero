@@ -121,19 +121,86 @@ describe("MyListsPage", () => {
     expect(saved[0]).toMatchObject({ stance: "like", visibility: "friends" });
   });
 
-  it("shows the consent notice when an allergy is selected", async () => {
+});
+
+/**
+ * Art. 9(2)(a) GDPR wants an explicit declaration before special-category data
+ * is stored. These tests hold the line where it is easiest to lose: the sheet
+ * otherwise saves on every tap.
+ */
+describe("special-category consent", () => {
+  async function openAllergy() {
     const user = userEvent.setup();
+    const saved: unknown[] = [];
     mockApi({
       "GET /api/me/preferences": () => ({ preferences: [preference()] }),
-      "PUT /api/me/preferences/item-1": () => ({ preference: preference() }),
+      "PUT /api/me/preferences/item-1": (_url, init) => {
+        saved.push(JSON.parse(String(init?.body)));
+        return { preference: preference() };
+      },
+    });
+
+    renderWithProviders(<MyListsPage />);
+    await user.click(await screen.findByText("Koriander"));
+    const dialog = await screen.findByRole("dialog", { name: "Koriander" });
+    await user.click(within(dialog).getByRole("button", { name: "Allergie" }));
+    return { user, dialog, saved };
+  }
+
+  it("does not save when a special-category reason is picked", async () => {
+    const { dialog, saved } = await openAllergy();
+
+    // Every other reason saves on tap; this one must not, because there is no
+    // consent yet.
+    expect(saved).toHaveLength(0);
+    expect(within(dialog).getByRole("checkbox")).not.toBeChecked();
+    expect(within(dialog).getByRole("button", { name: "Speichern" })).toBeDisabled();
+    expect(within(dialog).getByRole("alert")).toHaveTextContent(
+      /ohne einwilligung/i,
+    );
+  });
+
+  it("saves once consent is ticked, and sends it along", async () => {
+    const { user, dialog, saved } = await openAllergy();
+
+    await user.click(within(dialog).getByRole("checkbox"));
+
+    await waitFor(() => expect(saved).toHaveLength(1));
+    expect(saved[0]).toMatchObject({ reason: "allergy", consentGiven: true });
+    expect(within(dialog).getByRole("button", { name: "Speichern" })).toBeEnabled();
+  });
+
+  it("blocks saving again when consent is taken back", async () => {
+    const { user, dialog } = await openAllergy();
+
+    await user.click(within(dialog).getByRole("checkbox"));
+    await user.click(within(dialog).getByRole("checkbox"));
+
+    // Withdrawal has to be as easy as giving consent (Art. 7(3)), and it has
+    // to bite immediately.
+    expect(within(dialog).getByRole("button", { name: "Speichern" })).toBeDisabled();
+  });
+
+  it("shows an existing entry as already consented", async () => {
+    const user = userEvent.setup();
+    mockApi({
+      "GET /api/me/preferences": () => ({
+        preferences: [
+          preference({
+            reason: "allergy",
+            consentedAt: "2026-03-04T12:00:00.000Z",
+            consentVersion: "art9-2026-08",
+          }),
+        ],
+      }),
     });
 
     renderWithProviders(<MyListsPage />);
     await user.click(await screen.findByText("Koriander"));
     const dialog = await screen.findByRole("dialog", { name: "Koriander" });
 
-    expect(within(dialog).queryByText(/Gesundheitsangaben/)).toBeNull();
-    await user.click(within(dialog).getByRole("button", { name: "Allergie" }));
-    expect(within(dialog).getByText(/Gesundheitsangaben/)).toBeInTheDocument();
+    expect(within(dialog).getByRole("checkbox")).toBeChecked();
+    expect(within(dialog).getByText(/04\.03\.2026/)).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Speichern" })).toBeEnabled();
   });
 });

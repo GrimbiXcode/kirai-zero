@@ -92,6 +92,7 @@ export function SettingsPage() {
           {t("settings.privacy")}
         </h2>
         <p className="text-sm text-muted">{t("settings.privacyText")}</p>
+        <p className="text-sm text-muted">{t("settings.retentionText")}</p>
       </section>
     </div>
   );

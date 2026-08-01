@@ -39,6 +39,12 @@ export const users = pgTable(
     handle: text("handle").notNull(),
     displayName: text("display_name").notNull(),
     locale: text("locale").notNull().default("de"),
+    /**
+     * Set when someone deletes their account. The row survives only until the
+     * next housekeeping run erases it; identifying fields are already
+     * overwritten and everything others could see is gone by then.
+     */
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -49,6 +55,7 @@ export const users = pgTable(
   (table) => [
     uniqueIndex("users_email_key").on(table.email),
     uniqueIndex("users_handle_key").on(table.handle),
+    index("users_deleted_at_idx").on(table.deletedAt),
   ],
 );
 
@@ -123,6 +130,12 @@ export const preferences = pgTable(
     reason: reasonEnum("reason").notNull().default("taste"),
     note: text("note"),
     visibility: visibilityEnum("visibility").notNull().default("friends"),
+    // Proof of the explicit consent required for special-category reasons
+    // (Art. 7(1) GDPR: the controller must be able to demonstrate it). Null
+    // for ordinary reasons, and cleared again when someone switches away from
+    // a special-category reason — that switch is the withdrawal.
+    consentedAt: timestamp("consented_at", { withTimezone: true }),
+    consentVersion: text("consent_version"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

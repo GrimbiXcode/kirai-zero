@@ -216,6 +216,7 @@ describe("friend profile access", () => {
     await setPreference(app, anna, erdnuesse, {
       stance: "avoid",
       reason: "allergy",
+      consentGiven: true,
     });
     await setPreference(app, anna, lakritz, {
       stance: "dislike",

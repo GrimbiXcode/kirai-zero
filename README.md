@@ -94,8 +94,24 @@ Kern der Anwendung, nicht Beiwerk:
 - Sitzungen ohne IP-Adresse und ohne User-Agent; Logs ohne Client-Adresse
 - Export und Löschung sind im Produkt, nicht auf Anfrage per E-Mail
 
-Details, offene Punkte vor einem Produktivstart und das Verarbeitungsverzeichnis
-stehen in [`docs/privacy-concept.md`](docs/privacy-concept.md). Warum die
+**Besonders geschützte Angaben.** Allergie und Unverträglichkeit sind
+Gesundheitsdaten, Überzeugung und Religion offenbaren eine Weltanschauung —
+alle vier fallen unter Art. 9 DSGVO. Die App speichert sie nur nach einer
+ausdrücklichen Einwilligung, die als eigene Checkbox erteilt wird und das
+Speichern bis dahin blockiert; Zeitpunkt und Textfassung werden als Nachweis
+festgehalten. Ein Grund muss nie angegeben werden, die App ist ohne jede solche
+Angabe voll nutzbar.
+
+**Fristen.** Sitzungen längstens 30 Tage. Beim Löschen des Kontos enden Zugriff
+und Sichtbarkeit sofort; ein stündlicher Job entfernt die Daten endgültig
+(zugesagte Obergrenze 24 Stunden). Backups werden nach 90 Tagen automatisch
+gelöscht.
+
+Details und das Verarbeitungsverzeichnis stehen in
+[`docs/privacy-concept.md`](docs/privacy-concept.md), die
+Datenschutz-Folgenabschätzung in [`docs/dpia.md`](docs/dpia.md) und der Ablauf
+der rechtlichen Prüfung in
+[`docs/legal-review-checklist.md`](docs/legal-review-checklist.md). Warum die
 Architektur so aussieht, wie sie aussieht, steht in
 [`docs/decisions.md`](docs/decisions.md).
 

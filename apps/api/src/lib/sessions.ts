@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { and, eq, gt, lt } from "drizzle-orm";
+import { and, eq, gt, isNull, lt } from "drizzle-orm";
 import type { Database } from "../db/client";
 import { sessions, users } from "../db/schema";
 
@@ -62,7 +62,15 @@ export async function resolveSession(
     })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
-    .where(and(eq(sessions.tokenHash, hashToken(token)), gt(sessions.expiresAt, now)))
+    .where(
+      and(
+        eq(sessions.tokenHash, hashToken(token)),
+        gt(sessions.expiresAt, now),
+        // Deleting an account already removes its sessions; this makes sure a
+        // marked account cannot authenticate even if one turns up anyway.
+        isNull(users.deletedAt),
+      ),
+    )
     .limit(1);
 
   const row = rows[0];

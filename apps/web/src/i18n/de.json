@@ -66,7 +66,12 @@
   "lists.visibilityLabel": "Sichtbarkeit",
   "lists.visibility.friends": "Für Freunde sichtbar",
   "lists.visibility.private": "Nur für mich",
-  "lists.healthConsent": "Allergien und Unverträglichkeiten sind Gesundheitsangaben. Wenn du sie hier einträgst, willigst du ein, dass sie deinen Freunden angezeigt werden. Du kannst den Eintrag jederzeit löschen oder auf «Nur für mich» stellen.",
+  "lists.consentTitle": "Besonders geschützte Angabe",
+  "lists.consentIntro": "Allergien und Unverträglichkeiten sind Gesundheitsangaben, Überzeugung und Religion sagen etwas über deine Weltanschauung. Solche Angaben dürfen wir nur mit deiner ausdrücklichen Einwilligung speichern.",
+  "lists.consentCheckbox": "Ja, ich willige ein, dass kirai-zero diese Angabe speichert und sie den Personen anzeigt, die ich als Freunde bestätigt habe.",
+  "lists.consentDetails": "Du kannst die Einwilligung jederzeit zurücknehmen: wähle einen anderen Grund oder lösche den Eintrag. Bedenke, dass sich aus einem Eintrag auch ohne diese Angabe etwas ableiten lässt — wer sieht, dass du bestimmte Speisen meidest, kann daraus Schlüsse ziehen.",
+  "lists.consentRequired": "Ohne Einwilligung lässt sich dieser Grund nicht speichern.",
+  "lists.consentGivenAt": "Einwilligung erteilt am {date}.",
   "lists.healthBadge": "Gesundheit",
 
   "kind.food": "Lebensmittel",
@@ -116,5 +121,6 @@
   "settings.deleteConfirm": "Konto endgültig löschen? Das lässt sich nicht rückgängig machen.",
   "settings.logout": "Abmelden",
   "settings.privacy": "Datenschutz",
-  "settings.privacyText": "kirai-zero speichert nur, was für den Dienst nötig ist: E-Mail, Benutzername, Anzeigename und deine Einträge. Keine Analyse-Dienste, keine Werbung, keine Weitergabe an Dritte. Deine Listen sehen nur Personen, die du als Freunde bestätigt hast."
+  "settings.privacyText": "kirai-zero speichert nur, was für den Dienst nötig ist: E-Mail, Benutzername, Anzeigename und deine Einträge. Keine Analyse-Dienste, keine Werbung, keine Weitergabe an Dritte. Deine Listen sehen nur Personen, die du als Freunde bestätigt hast.",
+  "settings.retentionText": "Angaben zu Allergien, Unverträglichkeiten, Überzeugung und Religion speichern wir nur mit deiner ausdrücklichen Einwilligung. Löschst du dein Konto, endet der Zugriff sofort und alle Daten werden innerhalb von 24 Stunden endgültig entfernt; Sicherungskopien werden spätestens nach 90 Tagen gelöscht."
 }

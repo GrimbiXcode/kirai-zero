@@ -141,6 +141,8 @@ export interface PreferenceInput {
   reason: PreferenceDto["reason"];
   note?: string;
   visibility: PreferenceDto["visibility"];
+  /** Required by the API for special-category reasons (Art. 9 GDPR). */
+  consentGiven?: boolean;
 }
 
 export function useUpsertPreference() {

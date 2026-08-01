@@ -1,9 +1,10 @@
 # Datenschutzkonzept kirai-zero
 
-Stand: Erstfassung zum MVP-Kern. Dieses Dokument beschreibt, was die Anwendung
-technisch tut. Es ersetzt keine rechtliche Prüfung — es bereitet sie vor, indem
-es die Fakten liefert, die eine Datenschutzerklärung und ein
-Verarbeitungsverzeichnis brauchen.
+Stand: MVP-Kern mit Einwilligungsschranke und Löschpipeline. Dieses Dokument
+beschreibt, was die Anwendung technisch tut. Es ersetzt keine rechtliche
+Prüfung — es bereitet sie vor. Wie diese Prüfung abläuft, steht in
+[`legal-review-checklist.md`](legal-review-checklist.md); das dabei
+entstehende Dokument in [`dpia.md`](dpia.md).
 
 ## Grundsatz
 
@@ -23,7 +24,7 @@ nicht abfliessen.
 | **Betroffene** | Registrierte Nutzerinnen und Nutzer |
 | **Rechtsgrundlage** | Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung) |
 | **Empfänger** | Keine. Nur der Betreiber, Hosting in EU/CH |
-| **Löschung** | Sofort und vollständig bei Kontolöschung durch die betroffene Person |
+| **Löschung** | Auf Verlangen der betroffenen Person; Ablauf siehe «Löschprozess und Aufbewahrung» |
 | **Tabelle** | `users` |
 
 Nicht erhoben: Telefonnummer, Adresse, Geburtsdatum, Geschlecht, Adressbuch,
@@ -36,7 +37,7 @@ Standort, Zahlungsdaten.
 | **Zweck** | Angemeldet bleiben |
 | **Datenkategorien** | SHA-256-Hash des Sitzungstokens, Zeitstempel (erstellt, zuletzt gesehen, Ablauf), Nutzer-ID |
 | **Rechtsgrundlage** | Art. 6 Abs. 1 lit. b DSGVO |
-| **Löschung** | Bei Abmeldung, spätestens 30 Tage nach letzter Nutzung; abgelaufene Sitzungen werden stündlich automatisch entfernt |
+| **Löschung** | Bei Abmeldung, spätestens 30 Tage nach letzter Nutzung; abgelaufene Sitzungen werden stündlich automatisch entfernt. Beim Löschen des Kontos sofort |
 | **Tabelle** | `sessions` |
 
 **Ausdrücklich nicht gespeichert:** IP-Adresse und User-Agent. Ein Test in
@@ -48,17 +49,30 @@ das nicht unbemerkt zurückkommt.
 | | |
 |---|---|
 | **Zweck** | Kern des Dienstes: Vorlieben und Abneigungen für Freundinnen und Freunde sichtbar machen |
-| **Datenkategorien** | Verweis auf einen Katalogeintrag, Haltung (`stance`), Begründung (`reason`), freie Notiz (max. 280 Zeichen), Sichtbarkeit |
-| **Besonderheit** | `reason = allergy` oder `intolerance` sind **Gesundheitsdaten** im Sinn von Art. 9 DSGVO |
-| **Rechtsgrundlage** | Art. 6 Abs. 1 lit. b DSGVO; für Gesundheitsdaten zusätzlich Art. 9 Abs. 2 lit. a (ausdrückliche Einwilligung) |
+| **Datenkategorien** | Verweis auf einen Katalogeintrag, Haltung (`stance`), Begründung (`reason`), freie Notiz (max. 280 Zeichen), Sichtbarkeit, Einwilligungsnachweis |
+| **Besonderheit** | Vier der sechs Gründe sind **besondere Kategorien** nach Art. 9 Abs. 1 DSGVO: `allergy` und `intolerance` sind Gesundheitsdaten, `religious` und `ethical` offenbaren religiöse oder weltanschauliche Überzeugungen |
+| **Rechtsgrundlage** | Art. 6 Abs. 1 lit. b DSGVO für gewöhnliche Einträge; für die vier genannten Gründe Art. 6 Abs. 1 lit. a **und** Art. 9 Abs. 2 lit. a (ausdrückliche Einwilligung), in der Schweiz Art. 6 Abs. 7 lit. a revDSG |
 | **Löschung** | Jederzeit einzeln durch die betroffene Person, vollständig bei Kontolöschung |
 | **Tabelle** | `preferences` |
 
-Zur Einwilligung: Die Angabe einer Allergie ist immer freiwillig und wird nie
-verlangt. Vor Produktivstart ist im UI an der Stelle, an der `allergy` oder
-`intolerance` gewählt wird, ein ausdrücklicher Einwilligungshinweis zu
-ergänzen — die Auswahl selbst ist die Einwilligungshandlung, sie muss aber als
-solche erkennbar sein. **Diese UI-Ergänzung steht noch aus.**
+**Einwilligung.** Kein Grund muss angegeben werden; die Voreinstellung ist
+«Geschmack», und die App ist ohne jede Art.-9-Angabe voll nutzbar. Wird einer
+der vier besonderen Gründe gewählt, verlangt die App eine eigene, unvorbelegte
+Bestätigung, bevor gespeichert werden kann — ein blosser Hinweistext wäre keine
+ausdrückliche Erklärung im Sinn von Art. 9 Abs. 2 lit. a. Der Server prüft das
+ebenfalls und antwortet sonst mit `consent_required`; die Prüfung hängt
+**nicht** an der Sichtbarkeit, weil Art. 9 die Verarbeitung selbst beschränkt
+und nicht erst die Weitergabe.
+
+Zum Nachweis (Art. 7 Abs. 1) speichert `preferences` Zeitpunkt (`consented_at`)
+und Fassung des Textes (`consent_version`). Der Widerruf ist so leicht wie die
+Erteilung: ein anderer Grund oder das Löschen des Eintrags entfernt beides.
+
+**Vorbehalt zur Ableitbarkeit.** Nach EuGH C-184/20 genügt es für Art. 9, dass
+sich ein Merkmal ableiten lässt — «kein Schweinefleisch» kann auf eine religiöse
+Überzeugung hindeuten, auch ohne dass jemand `religious` wählt. Das lässt sich
+technisch nicht ausschliessen. Der Einwilligungstext benennt es deshalb
+ausdrücklich, und jeder Eintrag lässt sich auf «Nur für mich» stellen.
 
 ### V4 — Freundschaften und Anfragen
 
@@ -86,12 +100,50 @@ solche erkennbar sein. **Diese UI-Ergänzung steht noch aus.**
 | Auskunft (Art. 15) | `GET /api/me/export` — vollständiger JSON-Export, in den Einstellungen als Download |
 | Datenübertragbarkeit (Art. 20) | derselbe Export, maschinenlesbar |
 | Berichtigung (Art. 16) | Präferenzen sind jederzeit editierbar |
-| Löschung (Art. 17) | `DELETE /api/me` — sofortige, vollständige Löschung ohne Wartefrist und ohne Soft-Delete |
+| Löschung (Art. 17) | `DELETE /api/me` — siehe Löschprozess unten |
 | Einschränkung (Art. 18) | Einzelne Einträge lassen sich auf `visibility = private` setzen, statt sie zu löschen |
 
 Im Export erscheinen Dritte (Freundinnen und Freunde) nur mit Handle und
 Anzeigename — also mit Daten, welche die exportierende Person ohnehin sieht.
-Nie mit E-Mail-Adresse.
+Nie mit E-Mail-Adresse. Der Einwilligungsnachweis ist Teil des Exports, damit
+nachvollziehbar bleibt, wozu man wann zugestimmt hat.
+
+## Löschprozess und Aufbewahrung
+
+### Livesystem
+
+Beim Löschen des Kontos läuft in **einer Transaktion**:
+
+1. Die Kontozeile wird als gelöscht markiert (`deleted_at`).
+2. E-Mail, Handle, Anzeigename und Passwort-Hash werden mit nicht
+   rückführbaren Platzhaltern überschrieben. Damit ist eine Anmeldung
+   ausgeschlossen, und Handle wie E-Mail-Adresse sind sofort wieder frei.
+3. Sitzungen, Freundschaften und Freundschaftsanfragen werden entfernt. Die
+   Sichtbarkeit für andere endet damit in derselben Sekunde, nicht erst mit
+   dem Löschjob.
+
+Ein Hintergrundjob löscht die markierte Zeile endgültig; er läuft beim Start
+und danach stündlich. **Zugesagte Obergrenze: 24 Stunden**, real unter einer
+Stunde. Die Kaskaden im Schema entfernen dabei die Präferenzen; selbst
+angelegte Katalogeinträge bleiben ohne Autorenverweis bestehen, weil andere
+Personen sie in ihren Listen verwenden.
+
+Zwischen Markierung und endgültiger Löschung ist nichts erreichbar: das
+Freundesprofil verlangt eine Freundschaft, die eigene Liste eine Sitzung —
+beides existiert nicht mehr. Eine Wiederherstellung gibt es bewusst nicht.
+
+### Backups
+
+Backups werden **90 Tage** aufbewahrt und danach automatisch gelöscht.
+Spätestens damit verschwinden auch gelöschte Konten aus den Sicherungen. Ein
+gezieltes Löschen einzelner Personen aus bestehenden Backups findet nicht
+statt: bei verschlüsselten Vollsicherungen ist das nicht sinnvoll möglich, und
+die Sicherungen bleiben bis zum Ablauf der Frist gesperrt — sie werden
+ausschliesslich zur Wiederherstellung nach einem Ausfall verwendet. Wird eine
+Sicherung eingespielt, sind die zwischenzeitlich eingegangenen Löschbegehren
+erneut auszuführen; dafür ist ein Protokoll der Löschungen zu führen.
+**Diese Position ist rechtlich zu bestätigen** — sie steht als offener Punkt
+in der Prüf-Checkliste.
 
 ## Technische und organisatorische Massnahmen
 
@@ -111,13 +163,21 @@ Nie mit E-Mail-Adresse.
 
 ## Offene Punkte vor Produktivstart
 
-1. Einwilligungshinweis im UI bei Auswahl von `allergy`/`intolerance` (siehe V3)
-2. Datenschutzerklärung und Impressum verfassen und im UI verlinken
-3. Auftragsverarbeitungsvertrag mit dem Hoster (Hetzner, Infomaniak, Exoscale)
-4. Backups: Verschlüsselung, Aufbewahrungsfrist und Löschung dokumentieren —
-   eine gelöschte Person darf nicht unbegrenzt in Backups fortleben
-5. Prüfen, ob ein Vertreter nach Art. 27 DSGVO bzw. Art. 14 revDSG nötig ist
+Der Ablauf dazu steht in [`legal-review-checklist.md`](legal-review-checklist.md),
+das Prüfdokument in [`dpia.md`](dpia.md).
+
+1. Datenschutz-Folgenabschätzung fertigstellen und Restrisiko einschätzen
+2. Mindestalter festlegen und abfragen (Art. 8 DSGVO) — hier tut die App
+   bislang nichts
+3. Prüfen, ob ein Datenschutzbeauftragter nach Art. 37 Abs. 1 lit. c DSGVO
+   nötig ist; in der Schweiz Berater nach Art. 10 revDSG erwägen
+4. Datenschutzerklärung und Impressum verfassen und im UI verlinken
+5. Auftragsverarbeitungsvertrag mit dem Hoster (Hetzner, Infomaniak, Exoscale)
+6. Technisch belegen, dass die 90-Tage-Regel für Backups beim gewählten Hoster
+   tatsächlich greift, und die Behandlung von Löschbegehren beim Einspielen
+   einer Sicherung rechtlich bestätigen lassen
+7. Prüfen, ob ein Vertreter nach Art. 27 DSGVO bzw. Art. 14 revDSG nötig ist
    (abhängig vom Sitz des Betreibers)
-6. Ratenbegrenzung arbeitet im Speicher auf Basis der IP-Adresse. Sie wird
+8. Ratenbegrenzung arbeitet im Speicher auf Basis der IP-Adresse. Sie wird
    nicht persistiert und nicht geloggt; bei einem Wechsel auf einen
    gemeinsamen Speicher (Redis) ist das erneut zu bewerten
