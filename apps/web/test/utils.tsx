@@ -70,12 +70,9 @@ export function preference(overrides: Record<string, unknown> = {}) {
       kind: "ingredient",
       isCurated: true,
     },
-    stance: "avoid",
-    reason: "taste",
+    stance: "dislike",
     note: null,
     visibility: "friends",
-    consentedAt: null,
-    consentVersion: null,
     updatedAt: "2026-01-01T10:00:00.000Z",
     ...overrides,
   };

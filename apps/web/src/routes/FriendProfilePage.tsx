@@ -66,6 +66,9 @@ export function FriendProfilePage() {
           >
             {t("profile.dislikes", { name: user.displayName })}
           </h2>
+          <p className="mb-2 text-xs text-muted">
+            {t("profile.dislikeMeaning", { name: user.displayName })}
+          </p>
           {dislikes.length === 0 ? (
             <p className="text-sm text-muted">{t("profile.emptyDislikes")}</p>
           ) : (

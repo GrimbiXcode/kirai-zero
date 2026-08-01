@@ -1,6 +1,6 @@
-import { isHealthCritical, type PreferenceDto, type SharedPreferenceDto } from "shared";
+import type { PreferenceDto, SharedPreferenceDto } from "shared";
 import { t } from "../i18n";
-import { kindLabel, reasonLabel } from "../lib/labels";
+import { kindLabel } from "../lib/labels";
 
 type Entry = PreferenceDto | SharedPreferenceDto;
 
@@ -15,18 +15,10 @@ export function PreferenceRow({
   entry: Entry;
   onClick?: () => void;
 }) {
-  const critical = isHealthCritical(entry.reason);
   const content = (
     <>
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium">{entry.item.name}</span>
-        {critical && (
-          // Allergies and intolerances get a badge of their own: for a host
-          // they are the difference between a preference and a hazard.
-          <span className="chip bg-no-soft text-no">
-            {reasonLabel(entry.reason)}
-          </span>
-        )}
         {hasVisibility(entry) && entry.visibility === "private" && (
           <span className="chip bg-line/50 text-muted">
             {t("lists.visibility.private")}
@@ -35,7 +27,6 @@ export function PreferenceRow({
       </div>
       <div className="mt-0.5 text-xs text-muted">
         {kindLabel(entry.item.kind)}
-        {!critical && entry.reason !== "taste" && ` · ${reasonLabel(entry.reason)}`}
         {entry.note && ` · ${entry.note}`}
       </div>
     </>

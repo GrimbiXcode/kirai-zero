@@ -39,8 +39,7 @@ describe("FriendProfilePage", () => {
         dislikes: [
           preference({
             id: "d1",
-            stance: "avoid",
-            reason: "allergy",
+            stance: "dislike",
             item: {
               id: "i2",
               slug: "erdnuesse",
@@ -49,7 +48,7 @@ describe("FriendProfilePage", () => {
               isCurated: true,
             },
           }),
-          preference({ id: "d2", stance: "avoid", reason: "taste" }),
+          preference({ id: "d2", stance: "dislike" }),
         ],
       }),
     });
@@ -63,13 +62,9 @@ describe("FriendProfilePage", () => {
     expect(within(dislikes).getByText("Erdnüsse")).toBeInTheDocument();
     expect(within(dislikes).getByText("Koriander")).toBeInTheDocument();
 
-    // The allergy carries a badge and comes first, so a host skimming the list
-    // cannot miss the entry that matters for someone's health.
-    expect(within(dislikes).getByText("Allergie")).toBeInTheDocument();
-    const names = within(dislikes)
-      .getAllByRole("listitem")
-      .map((item) => item.textContent ?? "");
-    expect(names[0]).toContain("Erdnüsse");
+    // The column says in plain words what an entry means, because there is no
+    // reason field left to qualify it.
+    expect(within(dislikes).getByText(/nicht essen bzw. wegwerfen/)).toBeInTheDocument();
   });
 
   it("shows a plain message when the profile is not visible", async () => {

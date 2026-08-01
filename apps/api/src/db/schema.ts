@@ -11,14 +11,12 @@ import {
 import {
   FRIEND_REQUEST_STATUSES,
   ITEM_KINDS,
-  REASONS,
   STANCES,
   VISIBILITIES,
 } from "shared";
 
 export const itemKindEnum = pgEnum("item_kind", ITEM_KINDS);
 export const stanceEnum = pgEnum("stance", STANCES);
-export const reasonEnum = pgEnum("reason", REASONS);
 export const visibilityEnum = pgEnum("visibility", VISIBILITIES);
 export const friendRequestStatusEnum = pgEnum(
   "friend_request_status",
@@ -127,15 +125,8 @@ export const preferences = pgTable(
       .notNull()
       .references(() => items.id, { onDelete: "cascade" }),
     stance: stanceEnum("stance").notNull(),
-    reason: reasonEnum("reason").notNull().default("taste"),
     note: text("note"),
     visibility: visibilityEnum("visibility").notNull().default("friends"),
-    // Proof of the explicit consent required for special-category reasons
-    // (Art. 7(1) GDPR: the controller must be able to demonstrate it). Null
-    // for ordinary reasons, and cleared again when someone switches away from
-    // a special-category reason — that switch is the withdrawal.
-    consentedAt: timestamp("consented_at", { withTimezone: true }),
-    consentVersion: text("consent_version"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

@@ -1,138 +1,91 @@
-# Datenschutz-Folgenabschätzung — kirai-zero
+# Risikoeinschätzung — kirai-zero
 
-Nach Art. 35 DSGVO und Art. 22 revDSG. **Entwurf** — die kursiven Felder muss
-der Verantwortliche vor einem Produktivstart ausfüllen; alles andere beschreibt
-den Stand der Anwendung und ist aus dem Code belegbar.
+**Freiwillig geführt.** Eine Datenschutz-Folgenabschätzung ist nach Art. 35
+Abs. 3 lit. b DSGVO bei umfangreicher Verarbeitung von Daten nach Art. 9 Abs. 1
+Pflicht. Seit die App nicht mehr fragt, *warum* jemand etwas nicht mag,
+verarbeitet sie keine solchen Daten mehr — der Auslöser ist entfallen (siehe
+[`decisions.md`](decisions.md), Eintrag 11). Dasselbe gilt für die Pflicht zum
+Datenschutzbeauftragten nach Art. 37 Abs. 1 lit. c.
 
-Diese DSFA ist zugleich die Antwort auf die Frage, *wie* geprüft wird, ob die
-Einwilligungslösung trägt: sie ist das dafür vorgesehene Instrument. Der
-Ablauf drumherum steht in [`legal-review-checklist.md`](legal-review-checklist.md).
+Das Dokument bleibt trotzdem bestehen: die Risiken verschwinden nicht dadurch,
+dass die formale Pflicht wegfällt, und ein Anwalt oder eine Aufsichtsbehörde
+liest lieber ein vorhandenes Dokument als eine Behauptung.
 
 | | |
 |---|---|
 | **Verantwortlicher** | *auszufüllen: Name, Anschrift, Kontakt* |
-| **Datenschutzbeauftragter / Berater** | *auszufüllen, siehe Checkliste Schritt 2* |
 | **Stand** | *Datum der Fassung* |
-| **Fassung des Einwilligungstexts** | `art9-2026-08` (Konstante `CONSENT_VERSION` in `packages/shared/src/enums.ts`) |
 
-## 1. Warum überhaupt eine DSFA
-
-Art. 35 Abs. 3 lit. b DSGVO verlangt sie bei umfangreicher Verarbeitung von
-Daten nach Art. 9 Abs. 1. kirai-zero verarbeitet solche Daten nicht nebenbei,
-sondern als Kernfunktion: Allergien und Unverträglichkeiten sind
-Gesundheitsdaten, Gründe wie «Überzeugung» und «Religion» offenbaren religiöse
-oder weltanschauliche Ansichten. Ob «umfangreich» erreicht ist, hängt an der
-Nutzerzahl — die DSFA vorsorglich zu führen ist der günstigere Weg, als sie
-später nachzuholen.
-
-Nach Art. 22 revDSG gilt dasselbe, sobald ein hohes Risiko für die
-Persönlichkeit besteht; die Bearbeitung besonders schützenswerter Daten in
-grossem Umfang ist dort ausdrücklich als Beispiel genannt.
-
-## 2. Systematische Beschreibung der Verarbeitung
-
-**Zweck.** Nutzende halten fest, was sie mögen und was nicht, und geben es
-Personen frei, die sie als Freunde bestätigt haben. Das soll verhindern, dass
-Geschenke weggeworfen werden und dass Gastgeber Speisen zubereiten, die Gäste
-nicht mögen oder nicht vertragen.
-
-**Datenkategorien.** Siehe Verarbeitungsverzeichnis in
-[`privacy-concept.md`](privacy-concept.md). Für diese DSFA relevant:
+## 1. Was verarbeitet wird
 
 | Kategorie | Feld | Art. 9? |
 |---|---|---|
 | Kontodaten | E-Mail, Handle, Anzeigename, Passwort-Hash | nein |
 | Präferenz | Gegenstand, Haltung, Notiz, Sichtbarkeit | nein |
-| Präferenzgrund | `allergy`, `intolerance` | ja — Gesundheitsdaten |
-| Präferenzgrund | `religious`, `ethical` | ja — religiöse/weltanschauliche Überzeugungen |
-| Präferenzgrund | `taste`, `other` | nein |
-| Einwilligungsnachweis | Zeitpunkt, Fassung | nein |
+| Freundschaften | Nutzer-IDs, Status, Zeitstempel | nein |
 
-**Empfänger.** Ausschliesslich Personen, welche die betroffene Person selbst
-als Freunde bestätigt hat, und auch dort nur Einträge mit Sichtbarkeit
-«Für Freunde sichtbar». Keine Weitergabe an Dritte, keine Auftragsverarbeiter
-ausser dem Hoster.
+Vollständig im Verarbeitungsverzeichnis in
+[`privacy-concept.md`](privacy-concept.md).
 
-**Ort.** *auszufüllen: Hoster und Rechenzentrumsstandort (EU oder CH).*
+**Zweck.** Nutzende halten fest, was sie mögen und was sie — bekämen sie es
+vorgesetzt oder geschenkt — nicht essen bzw. wegwerfen würden, und geben es
+Personen frei, die sie als Freunde bestätigt haben. Damit sollen Geschenke
+nicht im Müll landen und Gastgeber nicht am Geschmack ihrer Gäste vorbeikochen.
 
-**Aufbewahrung.** Konto und Einträge bis zur Löschung durch die betroffene
-Person; danach Markierung und endgültige Löschung durch einen stündlich
-laufenden Job (Zusage: höchstens 24 h). Backups 90 Tage, danach automatisch
-gelöscht. Sitzungen längstens 30 Tage.
+**Rechtsgrundlage.** Durchgehend Art. 6 Abs. 1 lit. b DSGVO bzw. Art. 31 Abs. 2
+lit. a revDSG. Keine Einwilligung, damit auch keine Altersschranke nach Art. 8
+DSGVO — der gilt ausdrücklich nur, wenn Art. 6 Abs. 1 lit. a Anwendung findet.
 
-**Rechtsgrundlagen.**
+**Empfänger.** Nur Personen, welche die betroffene Person selbst bestätigt hat,
+und auch dort nur Einträge mit Sichtbarkeit «Für Freunde sichtbar». Keine
+Dritten, kein Auftragsverarbeiter ausser dem Hoster.
 
-| Verarbeitung | DSGVO | revDSG |
-|---|---|---|
-| Konto, Freundschaften, gewöhnliche Präferenzen | Art. 6 Abs. 1 lit. b | Art. 31 Abs. 2 lit. a |
-| Präferenzen mit Art.-9-Grund | Art. 6 Abs. 1 lit. a **und** Art. 9 Abs. 2 lit. a | Art. 6 Abs. 7 lit. a |
+**Aufbewahrung.** Konto bis zur Löschung durch die betroffene Person, danach
+Markierung und endgültige Löschung durch einen stündlichen Job (zugesagt:
+höchstens 24 h). Backups 90 Tage. Sitzungen längstens 30 Tage.
 
-Die doppelte Grundlage bei Art.-9-Daten ist Absicht: der EDSA geht davon aus,
-dass eine Ausnahme nach Art. 9 Abs. 2 die Rechtsgrundlage nach Art. 6 nicht
-ersetzt. Beides wird in einem Akt eingeholt.
+## 2. Notwendigkeit und Verhältnismässigkeit
 
-## 3. Notwendigkeit und Verhältnismässigkeit
-
-- **Datenminimierung.** Erhoben werden E-Mail, Handle, Anzeigename und die
-  selbst erfassten Einträge. Kein Telefon, keine Adresse, kein Geburtsdatum,
-  kein Adressbuch-Abgleich, keine Standortdaten, keine Zahlungsdaten.
+- **Datenminimierung.** E-Mail, Handle, Anzeigename, Einträge. Kein Telefon,
+  keine Adresse, kein Geburtsdatum, kein Adressbuch, kein Standort, keine
+  Zahlungsdaten.
+- **Kein Begründungsfeld.** Die App fragt nicht nach dem Warum. Das war eine
+  Produktentscheidung — sie macht das Eintragen einfacher — und hat als
+  Nebenwirkung die gesamte Art.-9-Verarbeitung beseitigt.
 - **Keine Erhebung auf Vorrat.** Keine Analyse-Dienste, keine Werbe-IDs, keine
-  Profilbildung. Sitzungen speichern weder IP-Adresse noch User-Agent; die
-  Logs enthalten keine Client-Adresse.
-- **Erforderlichkeit der Art.-9-Daten.** Der Zweck — verhindern, dass jemand
-  etwas Unverträgliches vorgesetzt bekommt — lässt sich ohne die Unterscheidung
-  zwischen «mag ich nicht» und «vertrage ich nicht» nicht erreichen. Ein
-  Verzicht auf das Feld würde den Schutzzweck aufheben, den die Anwendung
-  gerade verfolgt.
-- **Freiwilligkeit.** Kein Grund muss angegeben werden; die Voreinstellung ist
-  «Geschmack». Wer keinen Art.-9-Grund wählt, kann die App vollständig nutzen.
-  Die Einwilligung ist damit nicht an die Leistungserbringung gekoppelt
-  (Art. 7 Abs. 4 DSGVO).
-- **Granularität.** Die Einwilligung wird je Eintrag erteilt, nicht pauschal
-  fürs Konto.
+  Profilbildung. Sitzungen ohne IP-Adresse und User-Agent, Logs ohne
+  Client-Adresse.
+- **Sichtbarkeit in der Hand der Person.** Jeder Eintrag lässt sich einzeln auf
+  «Nur für mich» stellen oder löschen.
 
-## 4. Risiken für die betroffenen Personen
+## 3. Risiken
 
 | # | Risiko | Eintritt | Schwere | Massnahme |
 |---|---|---|---|---|
-| R1 | Gesundheits- oder Glaubensangaben werden Personen bekannt, die sie nicht kennen sollen | mittel | hoch | Zugriff nur über bestätigte Freundschaft, eine einzige Prüfstelle (`requireFriendship`), durch Tests abgedeckt; Sichtbarkeit je Eintrag steuerbar |
-| R2 | Einwilligung genügt den Anforderungen an «ausdrücklich» nicht | mittel | hoch | eigene, unvorbelegte Checkbox, die das Speichern blockiert; Text nennt Angabe, Zweck, Empfänger und Widerruf; Nachweis mit Zeitpunkt und Textfassung gespeichert |
-| R3 | Merkmale lassen sich aus Einträgen **ableiten**, auch ohne Art.-9-Grund (EuGH C-184/20) | hoch | mittel | technisch nicht auflösbar; im Einwilligungstext ausdrücklich benannt, damit die Einwilligung informiert ist; Sichtbarkeit «Nur für mich» steht für jeden Eintrag bereit |
-| R4 | Kontoübernahme legt die gesamte Liste offen | niedrig | hoch | argon2id nach OWASP-Parametern, Sitzungstoken nur als SHA-256-Hash gespeichert, Ratenbegrenzung auf Login und Registrierung, Login-Antwort ohne Kontoauskunft |
-| R5 | Daten überleben die Löschung | niedrig | hoch | Zugriff und Sichtbarkeit enden in derselben Transaktion, Identifikatoren werden sofort überschrieben, Job löscht endgültig; Backups verfallen nach 90 Tagen |
-| R6 | Betroffene wissen nicht, was gespeichert ist | niedrig | mittel | Selbstbedienungs-Export als JSON, enthält auch den Einwilligungsnachweis |
-| R7 | Minderjährige erteilen eine Einwilligung, die sie nicht wirksam erteilen können | *offen* | mittel | **noch nicht umgesetzt**, siehe Abschnitt 6 |
+| R1 | Einträge werden Personen bekannt, die sie nicht kennen sollen | mittel | mittel | Zugriff nur über bestätigte Freundschaft, eine einzige Prüfstelle (`requireFriendship`), durch Tests abgedeckt; Sichtbarkeit je Eintrag steuerbar |
+| R2 | Aus einer Liste lässt sich ein besonderes Merkmal **ableiten** (EuGH C-184/20) | mittel | mittel | nicht auflösbar, siehe unten |
+| R3 | Kontoübernahme legt die gesamte Liste offen | niedrig | mittel | argon2id nach OWASP-Parametern, Sitzungstoken nur als SHA-256-Hash, Ratenbegrenzung auf Login und Registrierung, Login-Antwort ohne Kontoauskunft |
+| R4 | Daten überleben die Löschung | niedrig | hoch | Zugriff und Sichtbarkeit enden in derselben Transaktion, Identifikatoren sofort überschrieben, Job löscht endgültig; Backups verfallen nach 90 Tagen, Restore löst eine Benachrichtigung aller Betroffenen aus |
+| R5 | Jemand schreibt etwas Heikles ins freie Notizfeld | niedrig | niedrig | Freitext gehört der Person, wird nicht ausgewertet und nicht strukturiert; die App legt es weder nahe noch fragt sie danach |
 
-## 5. Restrisiko
+## 4. Restrisiko
 
-Nach den Massnahmen verbleiben R3 (Ableitbarkeit, prinzipbedingt) und R7
-(Alter, noch nicht adressiert). R3 ist dem Zweck der Anwendung inhärent: eine
-App, die Vorlieben teilt, kann nicht verhindern, dass daraus Schlüsse gezogen
-werden — sie kann es nur transparent machen und die Sichtbarkeit in die Hand
-der betroffenen Person legen.
+**R2 bleibt und ist der einzige nennenswerte Punkt.** Wer sieht, dass jemand
+Schweinefleisch und Alkohol meidet, kann daraus etwas schliessen. Das ist einer
+App über Essensvorlieben inhärent — sie kann es nicht verhindern, nur nicht
+selbst betreiben. Konkret:
 
-*Einschätzung des Verantwortlichen, ob das Restrisiko «hoch» im Sinn von
-Art. 36 DSGVO / Art. 23 revDSG bleibt: auszufüllen.* Fällt sie auf «hoch», ist
-die Aufsichtsbehörde bzw. der EDÖB vorab zu konsultieren.
+- Es gibt kein Feld, das ein solches Merkmal benennt.
+- Es gibt keine Struktur, nach der sich filtern oder auswerten liesse.
+- Der Verantwortliche verfolgt damit keinen Zweck.
+- Die Einträge sehen nur Personen, welche die betroffene Person selbst
+  bestätigt hat, und nur solange sie das will.
 
-## 6. Offene Punkte
+Damit bleibt ein Restrisiko, aber kein hohes im Sinn von Art. 36 DSGVO bzw.
+Art. 23 revDSG. *Diese Einschätzung ist vom Verantwortlichen zu bestätigen.*
+Fällt sie anders aus, ist vorab die Aufsichtsbehörde bzw. der EDÖB zu
+konsultieren.
 
-1. **Mindestalter und Art. 8 DSGVO.** Es gibt heute keine Altersabfrage. Zu
-   entscheiden: Mindestalter festlegen und abfragen, oder Einwilligung der
-   Erziehungsberechtigten einholen. Ohne Entscheidung bleibt R7 offen.
-2. **Datenschutzerklärung und Impressum** verfassen und im UI verlinken; der
-   Einwilligungstext muss darauf verweisen.
-3. **Auftragsverarbeitungsvertrag** mit dem Hoster.
-4. **Backups**: die 90-Tage-Frist und die automatische Löschung sind
-   dokumentiert, aber noch nicht technisch belegt — Prüfung, dass die
-   Aufbewahrungsregel beim gewählten Hoster tatsächlich greift.
-5. **Vertreter** nach Art. 27 DSGVO bzw. Art. 14 revDSG, je nach Sitz des
-   Verantwortlichen.
+## 5. Offene Punkte
 
-## 7. Grundlagen
-
-- EDSA, Leitlinien 05/2020 zur Einwilligung — ausdrückliche Einwilligung
-  verlangt eine ausdrückliche Erklärung
-- EuGH, Urteil vom 1.8.2022, C-184/20 — Art. 9 erfasst auch mittelbar
-  ableitbare Merkmale
-- Art. 35, 36 DSGVO; Art. 22, 23 revDSG
+Siehe [`legal-review-checklist.md`](legal-review-checklist.md).

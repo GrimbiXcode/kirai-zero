@@ -1,7 +1,6 @@
 import { z } from "zod";
 import {
   ITEM_KINDS,
-  REASONS,
   STANCES,
   VISIBILITIES,
   FRIEND_REQUEST_STATUSES,
@@ -10,7 +9,6 @@ import { normalizeEmail, normalizeHandle } from "./slug";
 
 export const itemKindSchema = z.enum(ITEM_KINDS);
 export const stanceSchema = z.enum(STANCES);
-export const reasonSchema = z.enum(REASONS);
 export const visibilitySchema = z.enum(VISIBILITIES);
 export const friendRequestStatusSchema = z.enum(FRIEND_REQUEST_STATUSES);
 
@@ -71,16 +69,8 @@ export type ItemCreateInput = z.infer<typeof itemCreateSchema>;
 
 export const preferenceUpsertSchema = z.object({
   stance: stanceSchema,
-  reason: reasonSchema.default("taste"),
   note: z.string().trim().max(280).optional(),
   visibility: visibilitySchema.default("friends"),
-  /**
-   * Must be true when `reason` is a special category under Art. 9(1) GDPR.
-   * The dependency between the two fields is checked in the route rather than
-   * here, so the API can answer with its own `consent_required` code instead
-   * of a generic validation failure.
-   */
-  consentGiven: z.boolean().optional(),
 });
 export type PreferenceUpsertInput = z.infer<typeof preferenceUpsertSchema>;
 
@@ -128,25 +118,14 @@ export interface PreferenceDto {
   id: string;
   item: ItemDto;
   stance: (typeof STANCES)[number];
-  reason: (typeof REASONS)[number];
   note: string | null;
   visibility: (typeof VISIBILITIES)[number];
-  /** Set only for special-category reasons; part of the data export so the
-   *  person can see what they consented to and when. */
-  consentedAt: string | null;
-  consentVersion: string | null;
   updatedAt: string;
 }
 
-/**
- * A friend's preference as seen by someone else. Drops the visibility field,
- * since private entries are filtered server-side and never reach the client,
- * and the consent record, which is bookkeeping between the owner and us.
- */
-export type SharedPreferenceDto = Omit<
-  PreferenceDto,
-  "visibility" | "consentedAt" | "consentVersion"
->;
+/** A friend's preference as seen by someone else: no visibility field, since
+ *  private entries are filtered server-side and never reach the client. */
+export type SharedPreferenceDto = Omit<PreferenceDto, "visibility">;
 
 export interface FriendProfileDto {
   user: PublicUser;

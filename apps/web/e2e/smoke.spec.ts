@@ -17,20 +17,13 @@ async function addPreference(
   search: string,
   itemName: string,
   stance: string,
-  options: { reason?: string; visibility?: string } = {},
+  options: { visibility?: string } = {},
 ) {
   await page.getByLabel("Etwas eintragen").fill(search);
   await page.getByRole("button", { name: new RegExp(itemName) }).first().click();
 
   const dialog = page.getByRole("dialog", { name: itemName });
   await dialog.getByRole("button", { name: stance, exact: true }).click();
-  if (options.reason) {
-    await dialog.getByRole("button", { name: options.reason }).click();
-    // Special-category reasons block saving until consent is given, which is
-    // the behaviour the app has to have — so the flow has to give it.
-    const consent = dialog.getByRole("checkbox");
-    if (await consent.isVisible()) await consent.check();
-  }
   if (options.visibility) {
     await dialog.getByRole("button", { name: options.visibility }).click();
   }
@@ -48,11 +41,9 @@ test("two people become friends and see each other's lists", async ({
   // --- Anna signs up and fills her lists ---
   await register(page, annaHandle, "Anna");
 
-  await addPreference(page, "Koriander", "Koriander", "Gar nicht");
+  await addPreference(page, "Koriander", "Koriander", "Mag ich nicht");
   await addPreference(page, "Bücher", "Bücher", "Liebe ich");
-  await addPreference(page, "Erdnüsse", "Erdnüsse", "Gar nicht", {
-    reason: "Allergie",
-  });
+  await addPreference(page, "Erdnüsse", "Erdnüsse", "Mag ich nicht");
   await addPreference(page, "Lakritz", "Lakritz", "Mag ich nicht", {
     visibility: "Nur für mich",
   });
@@ -117,8 +108,7 @@ test("two people become friends and see each other's lists", async ({
 
   const dislikes = page.getByRole("region", { name: "Mag Anna nicht" });
   await expect(dislikes.getByText("Koriander")).toBeVisible();
-  // The allergy is flagged and leads the list.
-  await expect(dislikes.getByText("Allergie")).toBeVisible();
+  // Alphabetical, with nothing outranking anything else.
   await expect(dislikes.getByRole("listitem").first()).toContainText("Erdnüsse");
   // The entry Anna kept private never reaches him.
   await expect(dislikes.getByText("Lakritz")).toHaveCount(0);
@@ -135,7 +125,7 @@ test("a member can export their data and delete their account", async ({
 }) => {
   const handle = `carla${Date.now().toString(36)}`;
   await register(page, handle, "Carla");
-  await addPreference(page, "Koriander", "Koriander", "Gar nicht");
+  await addPreference(page, "Koriander", "Koriander", "Mag ich nicht");
 
   await page.getByRole("link", { name: "Einstellungen" }).click();
 

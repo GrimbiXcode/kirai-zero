@@ -2,7 +2,6 @@ import type { FastifyInstance } from "fastify";
 import { and, asc, eq, inArray, ne, or } from "drizzle-orm";
 import {
   friendRequestCreateSchema,
-  isHealthCritical,
   isNegative,
   isPositive,
   userIdParamSchema,
@@ -10,7 +9,6 @@ import {
   uuidParamSchema,
   type FriendDto,
   type FriendRequestDto,
-  type SharedPreferenceDto,
 } from "shared";
 import {
   friendRequests,
@@ -349,12 +347,10 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
       toSharedPreferenceDto({ ...row, item: toItemDto(row.item) }),
     );
 
+    // Both lists keep the alphabetical order the query already established;
+    // with no reasons there is no entry that deserves to jump the queue.
     const likes = shared.filter((entry) => isPositive(entry.stance));
-    const dislikes = shared
-      .filter((entry) => isNegative(entry.stance))
-      // Allergies and intolerances first: a host who reads only the top of the
-      // list must still see the entries that actually matter for their health.
-      .sort(byHealthCriticalFirst);
+    const dislikes = shared.filter((entry) => isNegative(entry.stance));
 
     return {
       user: toPublicUser(owner),
@@ -363,15 +359,6 @@ export async function socialRoutes(app: FastifyInstance): Promise<void> {
       dislikes,
     };
   });
-}
-
-function byHealthCriticalFirst(
-  a: SharedPreferenceDto,
-  b: SharedPreferenceDto,
-): number {
-  const rank = (entry: SharedPreferenceDto) =>
-    isHealthCritical(entry.reason) ? 0 : 1;
-  return rank(a) - rank(b) || a.item.name.localeCompare(b.item.name, "de");
 }
 
 async function loadPendingRequest(app: FastifyInstance, id: string) {

@@ -6,10 +6,14 @@ kann. Neue Einträge unten anhängen.
 ## 1. Eigene API und eigene Datenbank statt Backend-as-a-Service
 
 Supabase, Firebase und Auth0 wären schneller aufgesetzt. Alle drei bedeuten
-einen weiteren Auftragsverarbeiter mit US-Mutterkonzern für Daten, die
-Gesundheitsangaben enthalten können (Allergien). Fastify + PostgreSQL auf einem
-EU/CH-Host kostet mehr Betriebsaufwand und lässt dafür keine Frage nach
-Drittlandtransfers offen.
+einen weiteren Auftragsverarbeiter mit US-Mutterkonzern — für einen sozialen
+Graphen samt der Frage, wer wen kennt und was jemand meidet. Fastify +
+PostgreSQL auf einem EU/CH-Host kostet mehr Betriebsaufwand und lässt dafür
+keine Frage nach Drittlandtransfers offen.
+
+(Ursprünglich stand hier zusätzlich das Argument, die Daten könnten Allergien
+enthalten. Seit Eintrag 11 trifft das nicht mehr zu; die Entscheidung trägt
+auch ohne.)
 
 ## 2. Zentraler Item-Katalog statt Freitext
 
@@ -22,7 +26,7 @@ einen normalisierten Slug, der Umlaute transliteriert (`Süsskartoffel` →
 Der Slug ist pro Art eindeutig, nicht global: „Schokolade" existiert sinnvoll
 sowohl als Lebensmittel wie auch als Geschenkidee.
 
-## 3. `stance` und `reason` getrennt
+## 3. `stance` und `reason` getrennt — *überholt durch Eintrag 11*
 
 Eine einzige Skala von „liebe ich" bis „hasse ich" verliert die wichtigste
 Information: ob jemand etwas nicht mag oder nicht verträgt. Für die
@@ -75,7 +79,7 @@ verwenden Imports im gesamten Repository **keine** `.js`-Endungen —
 `moduleResolution: "bundler"` erwartet das so, und drizzle-kit kann die
 Endungen beim Laden des Schemas nicht auf `.ts` zurückführen.
 
-## 9. Einwilligung als Schranke, nicht als Hinweis
+## 9. Einwilligung als Schranke, nicht als Hinweis — *überholt durch Eintrag 11*
 
 Art. 9 Abs. 2 lit. a DSGVO verlangt eine *ausdrückliche* Einwilligung, und der
 EDSA versteht darunter eine ausdrückliche Erklärung — nicht bloss eine
@@ -118,3 +122,54 @@ Eine Wiederherstellung innerhalb des Fensters gibt es bewusst nicht: sie würde
 verlangen, dass die Freundschaften bestehen bleiben, und damit müsste jede
 Abfrage gelöschte Konten ausfiltern — viel mehr Fläche für ein Leck als der
 Nutzen wert ist.
+
+## 11. Kein Feld für das Warum
+
+Die App fragt nicht, weshalb jemand etwas nicht mag. Ein Eintrag auf der
+negativen Seite sagt genau eine Sache: *bekomme ich das vorgesetzt oder
+geschenkt, esse ich es nicht bzw. werfe es weg.* Das ist zuerst eine
+Produktentscheidung — wer eintragen will, muss sich nicht zwischen sechs
+Gründen entscheiden, und die Kategorien halfen ohnehin niemandem beim Kochen
+oder beim Schenken.
+
+Die Nebenwirkung ist der grössere Gewinn. Mit `reason` erhob die App
+Gesundheitsdaten (`allergy`, `intolerance`) und Angaben zur Weltanschauung
+(`religious`, `ethical`), also besondere Kategorien nach Art. 9 Abs. 1 DSGVO.
+Daran hing eine Kette: ausdrückliche Einwilligung samt Nachweis, Altersschranke
+nach Art. 8 DSGVO, DSFA-Pflicht nach Art. 35 Abs. 3 lit. b, möglicherweise ein
+Datenschutzbeauftragter. Ohne das Feld fällt die ganze Kette weg — Art. 8 etwa
+gilt ausdrücklich nur, «wenn Art. 6 Abs. 1 lit. a Anwendung findet», und
+Rechtsgrundlage ist jetzt durchgehend Art. 6 Abs. 1 lit. b.
+
+Was bleibt: aus einer Liste gemiedener Speisen lässt sich weiterhin etwas
+ableiten, und nach EuGH C-184/20 genügt Ableitbarkeit für Art. 9. Das ist einer
+App über Essensvorlieben inhärent. Der Unterschied ist, dass die App es nicht
+mehr erhebt, nicht strukturiert, nicht auswerten kann und keinen Zweck damit
+verfolgt. Dokumentiert in `docs/dpia.md`.
+
+Mit dem Grund fiel auch die Stufe `avoid` weg: sie unterschied sich von
+`dislike` nur, solange ein Grund den Schweregrad lieferte. Vier Stufen bleiben,
+die Abstufung nach oben (`love` gegen `like`) trägt weiterhin, weil sie beim
+Geschenk den Unterschied macht.
+
+Weil die Bedeutung jetzt nicht mehr aus dem Grund hervorgeht, steht sie
+ausgeschrieben über der Spalte — einmal in der eigenen Liste, einmal im
+Freundesprofil.
+
+## 12. Restore benachrichtigt alle Betroffenen
+
+Sicherungen laufen nach 90 Tagen ab; einzelne Personen daraus zu löschen ist
+bei verschlüsselten Vollsicherungen nicht sinnvoll möglich. Das Problem ist
+nicht die Aufbewahrung, sondern der Ernstfall: ein Restore kann ein gelöschtes
+Konto zurückbringen, ohne dass die betroffene Person davon erfährt.
+
+Deshalb ist die Benachrichtigung Teil des Restore-Vorgangs, nicht eine
+Kulanzgeste: **alle** Personen in der wiederhergestellten Datenbank werden
+angeschrieben, gerade auch die zurückgeholten, mit dem Hinweis, das Konto
+erneut zu löschen oder sich beim Support zu melden. Ablauf und fertiger
+Mailtext stehen in `docs/privacy-concept.md`.
+
+Kein Code: die App verschickt im Normalbetrieb keine E-Mails, und ein Restore
+ist ein seltener, manueller Vorgang. Ein Mailversand dafür aufzubauen hiesse,
+einen weiteren Auftragsverarbeiter einzuführen — für einen Fall, der von Hand
+ohnehin begleitet wird.

@@ -1,11 +1,9 @@
 {
   "app.name": "kirai-zero",
   "app.tagline": "Wissen, was Freunde mögen — und was nicht.",
-
   "nav.lists": "Meine Listen",
   "nav.friends": "Freunde",
   "nav.settings": "Einstellungen",
-
   "common.save": "Speichern",
   "common.cancel": "Abbrechen",
   "common.delete": "Löschen",
@@ -15,7 +13,6 @@
   "common.close": "Schliessen",
   "common.error": "Da ist etwas schiefgelaufen.",
   "common.optional": "optional",
-
   "auth.login.title": "Anmelden",
   "auth.login.submit": "Anmelden",
   "auth.login.toRegister": "Noch kein Konto? Jetzt registrieren",
@@ -33,7 +30,6 @@
   "auth.error.validation_failed": "Bitte prüfe deine Eingaben.",
   "auth.error.generic": "Anmeldung fehlgeschlagen. Bitte nochmals versuchen.",
   "auth.privacyNote": "Wir speichern nur E-Mail, Benutzername und Anzeigename. Keine Analyse, kein Tracking.",
-
   "lists.title": "Meine Listen",
   "lists.intro": "Trag ein, was du magst und was nicht. Deine Freunde sehen es — sonst niemand.",
   "lists.likes": "Mag ich",
@@ -53,27 +49,11 @@
   "lists.stance.like": "Mag ich",
   "lists.stance.neutral": "Egal",
   "lists.stance.dislike": "Mag ich nicht",
-  "lists.stance.avoid": "Gar nicht",
-  "lists.reasonLabel": "Warum?",
-  "lists.reason.taste": "Geschmack",
-  "lists.reason.allergy": "Allergie",
-  "lists.reason.intolerance": "Unverträglichkeit",
-  "lists.reason.ethical": "Überzeugung",
-  "lists.reason.religious": "Religion",
-  "lists.reason.other": "Anderes",
   "lists.noteLabel": "Notiz",
   "lists.notePlaceholder": "z.B. nur in kleinen Mengen",
   "lists.visibilityLabel": "Sichtbarkeit",
   "lists.visibility.friends": "Für Freunde sichtbar",
   "lists.visibility.private": "Nur für mich",
-  "lists.consentTitle": "Besonders geschützte Angabe",
-  "lists.consentIntro": "Allergien und Unverträglichkeiten sind Gesundheitsangaben, Überzeugung und Religion sagen etwas über deine Weltanschauung. Solche Angaben dürfen wir nur mit deiner ausdrücklichen Einwilligung speichern.",
-  "lists.consentCheckbox": "Ja, ich willige ein, dass kirai-zero diese Angabe speichert und sie den Personen anzeigt, die ich als Freunde bestätigt habe.",
-  "lists.consentDetails": "Du kannst die Einwilligung jederzeit zurücknehmen: wähle einen anderen Grund oder lösche den Eintrag. Bedenke, dass sich aus einem Eintrag auch ohne diese Angabe etwas ableiten lässt — wer sieht, dass du bestimmte Speisen meidest, kann daraus Schlüsse ziehen.",
-  "lists.consentRequired": "Ohne Einwilligung lässt sich dieser Grund nicht speichern.",
-  "lists.consentGivenAt": "Einwilligung erteilt am {date}.",
-  "lists.healthBadge": "Gesundheit",
-
   "kind.food": "Lebensmittel",
   "kind.ingredient": "Zutat",
   "kind.drink": "Getränk",
@@ -82,7 +62,6 @@
   "kind.scent": "Duft",
   "kind.activity": "Aktivität",
   "kind.other": "Anderes",
-
   "friends.title": "Freunde",
   "friends.search.label": "Freund suchen",
   "friends.search.placeholder": "Benutzername",
@@ -103,14 +82,12 @@
   "friends.remove": "Freundschaft beenden",
   "friends.removeConfirm": "Freundschaft mit {name} beenden? Ihr seht dann eure Listen nicht mehr.",
   "friends.view": "Profil ansehen",
-
   "profile.likes": "Mag {name}",
   "profile.dislikes": "Mag {name} nicht",
   "profile.emptyLikes": "{name} hat noch nichts eingetragen, was er oder sie mag.",
   "profile.emptyDislikes": "Nichts eingetragen.",
   "profile.giftHint": "Vorlieben helfen beim Geschenk, Abneigungen beim Menü.",
   "profile.notFound": "Dieses Profil ist für dich nicht sichtbar.",
-
   "settings.title": "Einstellungen",
   "settings.account": "Konto",
   "settings.data": "Deine Daten",
@@ -122,5 +99,7 @@
   "settings.logout": "Abmelden",
   "settings.privacy": "Datenschutz",
   "settings.privacyText": "kirai-zero speichert nur, was für den Dienst nötig ist: E-Mail, Benutzername, Anzeigename und deine Einträge. Keine Analyse-Dienste, keine Werbung, keine Weitergabe an Dritte. Deine Listen sehen nur Personen, die du als Freunde bestätigt hast.",
-  "settings.retentionText": "Angaben zu Allergien, Unverträglichkeiten, Überzeugung und Religion speichern wir nur mit deiner ausdrücklichen Einwilligung. Löschst du dein Konto, endet der Zugriff sofort und alle Daten werden innerhalb von 24 Stunden endgültig entfernt; Sicherungskopien werden spätestens nach 90 Tagen gelöscht."
+  "settings.retentionText": "Löschst du dein Konto, endet der Zugriff sofort und alle Daten werden innerhalb von 24 Stunden endgültig entfernt; Sicherungskopien werden spätestens nach 90 Tagen gelöscht. Wird je eine Sicherung eingespielt, informieren wir dich per E-Mail.",
+  "lists.dislikeMeaning": "Heisst: Bekomme ich das vorgesetzt oder geschenkt, esse ich es nicht bzw. werfe es weg. Warum, musst du nicht angeben — die App fragt bewusst nicht danach.",
+  "profile.dislikeMeaning": "Das würde {name} nicht essen bzw. wegwerfen."
 }

@@ -1,97 +1,57 @@
 # Rechtliche Prüfung — wie vorgehen
 
-Die Ausgangsfrage war: *«Reicht eine Einwilligung für die Gesundheitsangaben,
-und wie prüfe ich das?»* Die kurze Antwort: eine Einwilligung ist der richtige
-Weg, aber sie muss **ausdrücklich** sein, und geprüft wird das nicht durch
-Nachlesen, sondern durch die Schritte unten. Diese Liste ist die Reihenfolge;
-[`dpia.md`](dpia.md) ist das Dokument, das dabei entsteht.
+Die ursprüngliche Frage war, ob eine Einwilligung für Gesundheitsangaben
+genügt. Sie hat sich erledigt: die App fragt nicht mehr, warum jemand etwas
+nicht mag, und verarbeitet damit keine besonderen Kategorien von Daten mehr.
+Diese Liste hält fest, was dadurch entfallen ist und was noch zu tun bleibt.
 
-## Was die Recherche ergeben hat
+## Was entfallen ist — und warum
 
-1. **Die Einwilligung trägt** — Art. 9 Abs. 2 lit. a DSGVO und Art. 6 Abs. 7
-   lit. a revDSG sehen sie ausdrücklich vor. Die anderen Ausnahmen in Art. 9
-   Abs. 2 passen nicht: «offensichtlich öffentlich gemacht» (lit. e) scheidet
-   aus, weil die Listen nur für bestätigte Freunde sichtbar sind, und die
-   Haushaltsausnahme in Art. 2 Abs. 2 lit. c gilt für die Nutzenden, nicht für
-   den Betreiber der Plattform.
-2. **«Ausdrücklich» heisst mehr als anklicken.** Der EDSA verlangt eine
-   ausdrückliche Erklärung und nennt dafür etwa das Ausfüllen eines
-   elektronischen Formulars oder eine zweistufige Bestätigung. Ein
-   Informationstext, der beim Auswählen mitläuft, genügt nicht — deshalb hat
-   die App jetzt eine eigene, unvorbelegte Checkbox, die das Speichern
-   blockiert, und speichert Zeitpunkt und Textfassung als Nachweis
-   (Art. 7 Abs. 1).
-3. **Es sind vier Gründe, nicht zwei.** `religious` und `ethical` fallen unter
-   «religiöse oder weltanschauliche Überzeugungen» in Art. 9 Abs. 1, genau wie
-   `allergy` und `intolerance` unter Gesundheitsdaten.
-4. **Ableitung genügt.** Nach EuGH C-184/20 greift Art. 9 auch, wenn sich das
-   Merkmal nur ableiten lässt. Das ist bei einer App über Essensvorlieben nicht
-   vollständig vermeidbar und deshalb im Einwilligungstext benannt.
-5. **Art. 9 betrifft das Verarbeiten, nicht erst das Teilen.** Auch ein privat
-   gehaltener Allergie-Eintrag braucht die Einwilligung; die Schranke im Server
-   prüft deshalb unabhängig von der Sichtbarkeit.
+| Thema | Status | Grund |
+|---|---|---|
+| Ausdrückliche Einwilligung nach Art. 9 Abs. 2 lit. a DSGVO / Art. 6 Abs. 7 revDSG | **entfällt** | Ohne Begründungsfeld werden weder Gesundheitsdaten noch religiöse oder weltanschauliche Überzeugungen erhoben. Rechtsgrundlage ist durchgehend Art. 6 Abs. 1 lit. b DSGVO bzw. Art. 31 Abs. 2 lit. a revDSG |
+| Altersgrenze und Elterneinwilligung nach Art. 8 DSGVO | **entfällt** | Art. 8 Abs. 1 greift ausdrücklich nur, «wenn Art. 6 Abs. 1 lit. a Anwendung findet». Ohne Einwilligung als Rechtsgrundlage gibt es keine Altersschranke und keine Verifikationspflicht |
+| Pflicht zur Datenschutz-Folgenabschätzung, Art. 35 Abs. 3 lit. b DSGVO | **entfällt** | Der Auslöser ist die umfangreiche Verarbeitung von Art.-9-Daten. [`dpia.md`](dpia.md) wird freiwillig weitergeführt |
+| Datenschutzbeauftragter, Art. 37 Abs. 1 lit. c DSGVO | **entfällt** | Derselbe Auslöser. In der Schweiz war ein Berater nach Art. 10 revDSG ohnehin freiwillig |
+| Vorabkonsultation, Art. 36 DSGVO / Art. 23 revDSG | **entfällt**, solange das Restrisiko nicht als «hoch» eingestuft wird | Setzt eine DSFA mit hohem Restrisiko voraus |
 
-## Die Schritte
+## Was zu tun bleibt
 
-### 1. DSFA ausfüllen — selbst, ohne Anwalt
+### 1. Restrisiko bestätigen
 
-[`dpia.md`](dpia.md) ist bis auf die kursiven Felder fertig. Auszufüllen sind
-Verantwortlicher, Hosting-Standort, Datum und die Einschätzung des Restrisikos.
-Aufwand: ein bis zwei Stunden. Das Ergebnis entscheidet über Schritt 3.
+[`dpia.md`](dpia.md) ausfüllen — es fehlen Verantwortlicher, Hosting-Standort,
+Datum und die Bestätigung der Risikoeinschätzung. Aufwand: unter einer Stunde.
 
-### 2. Klären, ob ein Datenschutzbeauftragter nötig ist
+### 2. Kurzgutachten, falls gewünscht
 
-**EU:** Art. 37 Abs. 1 lit. c DSGVO verlangt einen DSB, wenn die Kerntätigkeit
-in der umfangreichen Verarbeitung von Art.-9-Daten besteht. Bei kirai-zero ist
-die Verarbeitung Kerntätigkeit — offen ist allein, ob sie «umfangreich» wird.
-Das hängt an der Nutzerzahl und ist deshalb bei jedem Wachstumsschritt neu zu
-beurteilen, nicht einmalig.
+Nur noch drei Fragen, und keine davon ist dringend:
 
-**Schweiz:** ein Berater nach Art. 10 revDSG ist freiwillig, hat aber einen
-konkreten Vorteil — private Verantwortliche dürfen dann auf die Konsultation
-des EDÖB verzichten (Art. 23 Abs. 4 revDSG).
+1. Trägt die Einschätzung zum Ableitungsrisiko (EuGH C-184/20)? Die App erhebt
+   nichts Besonderes, aber eine Liste gemiedener Speisen kann ein Merkmal
+   erkennen lassen. Ist das dem Verantwortlichen zurechenbar, wenn er weder
+   danach fragt noch danach auswerten kann?
+2. Wie ist mit Minderjährigen umzugehen? Art. 8 DSGVO greift nicht mehr, aber
+   Art. 8 Abs. 3 lässt das nationale Vertragsrecht unberührt — die
+   Handlungsfähigkeit beim Vertragsschluss bleibt also eine Frage der AGB.
+3. Genügt der Restore-Prozess (Benachrichtigung aller Betroffenen per Mail,
+   Hinweis auf erneute Löschung) als Umgang mit gelöschten Konten in
+   Sicherungen?
 
-### 3. Nur bei hohem Restrisiko: Behörde vorab konsultieren
+### 3. Dokumente und Verträge
 
-Bleibt das Restrisiko nach Schritt 1 «hoch», ist die Konsultation Pflicht:
-Art. 36 DSGVO bei der zuständigen Aufsichtsbehörde, Art. 23 revDSG beim EDÖB.
-Der EDÖB antwortet innert zwei bis drei Monaten — das gehört in die Planung,
-nicht in die Woche vor dem Start.
+- Datenschutzerklärung und Impressum verfassen und im UI verlinken
+- Auftragsverarbeitungsvertrag mit dem Hoster
+- Sobald die App E-Mails verschickt — etwa für die Restore-Benachrichtigung —
+  AVV mit dem Mailanbieter; Anbieter in EU oder CH wählen
+- Prüfen, ob ein Vertreter nach Art. 27 DSGVO bzw. Art. 14 revDSG nötig ist
 
-### 4. Kurzgutachten eines Fachanwalts
-
-Nicht für «ist Datenschutz nötig», sondern für die drei Fragen, die sich aus
-der Recherche nicht abschliessend beantworten lassen:
-
-1. Genügt die umgesetzte Checkbox-Lösung dem Erfordernis der ausdrücklichen
-   Einwilligung nach Art. 9 Abs. 2 lit. a DSGVO und Art. 6 Abs. 7 revDSG — oder
-   braucht es eine zweistufige Bestätigung?
-2. Wie ist mit der Ableitbarkeit nach C-184/20 umzugehen? Genügt der Hinweis im
-   Einwilligungstext, oder folgt daraus eine weitergehende Pflicht?
-3. Welches Mindestalter ist anzusetzen, und muss es aktiv abgefragt werden
-   (Art. 8 DSGVO)? Das ist der einzige Punkt, an dem die App heute noch gar
-   nichts tut.
-
-Mit der ausgefüllten DSFA im Anhang prüft ein Anwalt ein Dokument, statt die
-Verarbeitung erst zu rekonstruieren — das ist der Unterschied zwischen einem
-Kurzgutachten und einem Mandat.
-
-### 5. Datenschutzerklärung, Impressum, AVV
-
-Erst danach, weil die Texte auf den Ergebnissen aufbauen. Dazu der
-Auftragsverarbeitungsvertrag mit dem Hoster und die Prüfung, ob ein Vertreter
-nach Art. 27 DSGVO bzw. Art. 14 revDSG nötig ist.
-
-## Was die App bereits mitbringt
-
-Damit die Prüfung nicht bei null anfängt:
+## Was die App mitbringt
 
 | Anforderung | Wo |
 |---|---|
 | Verarbeitungsverzeichnis (Art. 30) | [`privacy-concept.md`](privacy-concept.md) |
-| DSFA-Entwurf | [`dpia.md`](dpia.md) |
-| Einwilligungstext | `apps/web/src/i18n/de.json`, Schlüssel `lists.consent*` |
-| Nachweis der Einwilligung | Spalten `consented_at`, `consent_version` in `preferences` |
+| Risikoeinschätzung | [`dpia.md`](dpia.md) |
 | Auskunft und Übertragbarkeit | `GET /api/me/export` |
 | Löschung | `DELETE /api/me` plus Job in `apps/api/src/lib/housekeeping.ts` |
-| Belege, dass die Zusagen halten | Tests in `apps/api/test/`, insbesondere `special-category consent` und `account deletion` |
+| Restore-Ablauf samt Mailtext | [`privacy-concept.md`](privacy-concept.md) |
+| Belege, dass die Zusagen halten | Tests in `apps/api/test/`, insbesondere `friend profile access` und `account deletion` |

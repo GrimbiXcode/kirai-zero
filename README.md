@@ -10,12 +10,10 @@ Geschenke.
 ## Was der MVP kann
 
 - Konto anlegen, an- und abmelden
-- Vorlieben und Abneigungen erfassen: Haltung (von „Liebe ich" bis „Gar nicht"),
-  Begründung (Geschmack, Allergie, Unverträglichkeit, Überzeugung, Religion),
-  optionale Notiz, Sichtbarkeit pro Eintrag
+- Vorlieben und Abneigungen erfassen: Haltung („Liebe ich" bis „Mag ich nicht"),
+  optionale Notiz, Sichtbarkeit pro Eintrag — ohne Angabe von Gründen
 - Freundschaftsanfragen senden, annehmen, ablehnen, beenden
-- Das Profil einer befreundeten Person ansehen — Allergien und
-  Unverträglichkeiten stehen hervorgehoben zuoberst
+- Das Profil einer befreundeten Person ansehen
 - Eigene Daten exportieren und das Konto sofort löschen
 
 Läuft als Webapp/PWA und, über Capacitor aus derselben Codebasis, als App für
@@ -94,23 +92,21 @@ Kern der Anwendung, nicht Beiwerk:
 - Sitzungen ohne IP-Adresse und ohne User-Agent; Logs ohne Client-Adresse
 - Export und Löschung sind im Produkt, nicht auf Anfrage per E-Mail
 
-**Besonders geschützte Angaben.** Allergie und Unverträglichkeit sind
-Gesundheitsdaten, Überzeugung und Religion offenbaren eine Weltanschauung —
-alle vier fallen unter Art. 9 DSGVO. Die App speichert sie nur nach einer
-ausdrücklichen Einwilligung, die als eigene Checkbox erteilt wird und das
-Speichern bis dahin blockiert; Zeitpunkt und Textfassung werden als Nachweis
-festgehalten. Ein Grund muss nie angegeben werden, die App ist ohne jede solche
-Angabe voll nutzbar.
+**Kein Feld für das Warum.** Die App fragt nicht, weshalb jemand etwas nicht
+mag. Ein Eintrag sagt nur: bekomme ich das vorgesetzt oder geschenkt, esse ich
+es nicht bzw. werfe es weg. Damit werden weder Gesundheitsdaten noch Angaben
+zur Weltanschauung erhoben — es gibt keine besonderen Kategorien nach Art. 9
+DSGVO, keine Einwilligung und keine Altersschranke.
 
 **Fristen.** Sitzungen längstens 30 Tage. Beim Löschen des Kontos enden Zugriff
 und Sichtbarkeit sofort; ein stündlicher Job entfernt die Daten endgültig
 (zugesagte Obergrenze 24 Stunden). Backups werden nach 90 Tagen automatisch
-gelöscht.
+gelöscht. Muss je eine Sicherung eingespielt werden, werden alle Betroffenen
+per E-Mail informiert.
 
 Details und das Verarbeitungsverzeichnis stehen in
-[`docs/privacy-concept.md`](docs/privacy-concept.md), die
-Datenschutz-Folgenabschätzung in [`docs/dpia.md`](docs/dpia.md) und der Ablauf
-der rechtlichen Prüfung in
+[`docs/privacy-concept.md`](docs/privacy-concept.md), die Risikoeinschätzung in
+[`docs/dpia.md`](docs/dpia.md) und der Stand der rechtlichen Prüfung in
 [`docs/legal-review-checklist.md`](docs/legal-review-checklist.md). Warum die
 Architektur so aussieht, wie sie aussieht, steht in
 [`docs/decisions.md`](docs/decisions.md).

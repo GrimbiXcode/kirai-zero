@@ -208,16 +208,11 @@ describe("friend profile access", () => {
     const lakritz = await findItemId(app, anna, "Lakritz");
 
     await setPreference(app, anna, koriander, {
-      stance: "avoid",
-      reason: "taste",
+      stance: "dislike",
       note: "schmeckt nach Seife",
     });
     await setPreference(app, anna, buecher, { stance: "love" });
-    await setPreference(app, anna, erdnuesse, {
-      stance: "avoid",
-      reason: "allergy",
-      consentGiven: true,
-    });
+    await setPreference(app, anna, erdnuesse, { stance: "dislike" });
     await setPreference(app, anna, lakritz, {
       stance: "dislike",
       visibility: "private",
@@ -235,7 +230,7 @@ describe("friend profile access", () => {
     expect(response.body).not.toContain("Koriander");
   });
 
-  it("shows likes and dislikes to a friend, with allergies first", async () => {
+  it("shows likes and dislikes to a friend, alphabetically", async () => {
     await befriend(app, anna, ben);
 
     const response = await app.inject({
@@ -252,10 +247,9 @@ describe("friend profile access", () => {
     const dislikes = body.dislikes.map(
       (entry: { item: { name: string } }) => entry.item.name,
     );
-    // The allergy has to lead the list, ahead of the alphabetically earlier
-    // matter of taste.
-    expect(dislikes[0]).toBe("Erdnüsse");
-    expect(dislikes).toContain("Koriander");
+    // Nothing outranks anything else any more, so the order is simply the
+    // alphabetical one the query produced.
+    expect(dislikes).toEqual(["Erdnüsse", "Koriander"]);
   });
 
   it("never discloses a private entry, not even to a friend", async () => {

@@ -1,30 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  isSpecialCategory,
-  REASONS,
   STANCES,
   VISIBILITIES,
   type ItemDto,
   type PreferenceDto,
-  type Reason,
   type Stance,
   type Visibility,
 } from "shared";
-import { formatDate, t } from "../i18n";
-import { kindLabel, reasonLabel, stanceLabel, visibilityLabel } from "../lib/labels";
+import { t } from "../i18n";
+import { kindLabel, stanceLabel, visibilityLabel } from "../lib/labels";
 
 export interface PreferenceDraft {
   stance: Stance;
-  reason: Reason;
   note: string;
   visibility: Visibility;
-  consentGiven: boolean;
 }
 
 /**
- * One entry, edited in a sheet. The stance buttons save on tap so the common
- * case — "I do not like this, that is all" — takes a single interaction;
- * reason, note and visibility sit below for the cases that need them.
+ * One entry, edited in a sheet. The stance buttons save on tap, which is the
+ * whole interaction for most entries; note and visibility sit below for the
+ * few that need them.
+ *
+ * There is deliberately no field for *why* — see docs/decisions.md.
  */
 export function PreferenceSheet({
   item,
@@ -40,13 +37,9 @@ export function PreferenceSheet({
   onClose: () => void;
 }) {
   const [stance, setStance] = useState<Stance>(existing?.stance ?? "like");
-  const [reason, setReason] = useState<Reason>(existing?.reason ?? "taste");
   const [note, setNote] = useState(existing?.note ?? "");
   const [visibility, setVisibility] = useState<Visibility>(
     existing?.visibility ?? "friends",
-  );
-  const [consentGiven, setConsentGiven] = useState(
-    existing?.consentedAt != null,
   );
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -59,26 +52,8 @@ export function PreferenceSheet({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
-  const draft: PreferenceDraft = {
-    stance,
-    reason,
-    note,
-    visibility,
-    consentGiven,
-  };
-  /** A special-category reason may not be stored before consent is given. */
-  const isSavable = (candidate: PreferenceDraft) =>
-    !isSpecialCategory(candidate.reason) || candidate.consentGiven;
-
-  /**
-   * Saves the merged draft, unless it is one the server would rightly refuse.
-   * Silently skipping is correct here: the affected controls stay visible and
-   * the sheet explains why saving is blocked.
-   */
   function save(next: Partial<PreferenceDraft> = {}) {
-    const merged = { ...draft, ...next };
-    if (!isSavable(merged)) return;
-    onSave(merged);
+    onSave({ stance, note, visibility, ...next });
   }
 
   return (
@@ -127,70 +102,6 @@ export function PreferenceSheet({
           </div>
         </fieldset>
 
-        <fieldset className="mt-5">
-          <legend className="field-label">{t("lists.reasonLabel")}</legend>
-          <div className="flex flex-wrap gap-2">
-            {REASONS.map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={reason === option}
-                onClick={() => {
-                  setReason(option);
-                  save({ reason: option });
-                }}
-                className={`chip border ${
-                  reason === option
-                    ? "border-accent bg-accent-soft text-accent"
-                    : "border-line bg-white text-muted"
-                }`}
-              >
-                {reasonLabel(option)}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-
-        {/*
-          Art. 9(2)(a) GDPR asks for an explicit declaration, not merely an
-          unambiguous action. A notice next to the reason buttons would not be
-          one, so this is a separate, unticked checkbox that gates saving —
-          and it appears at the moment the choice is made, not in a policy
-          document nobody opens.
-        */}
-        {isSpecialCategory(reason) && (
-          <section className="mt-4 rounded-xl border border-accent/30 bg-accent-soft p-3">
-            <h3 className="text-sm font-semibold">{t("lists.consentTitle")}</h3>
-            <p className="mt-1 text-xs text-ink">{t("lists.consentIntro")}</p>
-            <label className="mt-3 flex items-start gap-2 text-xs text-ink">
-              <input
-                type="checkbox"
-                className="mt-0.5 size-4 shrink-0 accent-[var(--color-accent)]"
-                checked={consentGiven}
-                onChange={(event) => {
-                  const next = event.target.checked;
-                  setConsentGiven(next);
-                  if (next) save({ consentGiven: next });
-                }}
-              />
-              <span>{t("lists.consentCheckbox")}</span>
-            </label>
-            <p className="mt-2 text-xs text-muted">{t("lists.consentDetails")}</p>
-            {existing?.consentedAt && consentGiven && (
-              <p className="mt-2 text-xs text-muted">
-                {t("lists.consentGivenAt", {
-                  date: formatDate(existing.consentedAt),
-                })}
-              </p>
-            )}
-            {!consentGiven && (
-              <p role="alert" className="mt-2 text-xs font-medium text-no">
-                {t("lists.consentRequired")}
-              </p>
-            )}
-          </section>
-        )}
-
         <div className="mt-5">
           <label className="field-label" htmlFor="note">
             {t("lists.noteLabel")}{" "}
@@ -237,7 +148,6 @@ export function PreferenceSheet({
           <button
             type="button"
             className="btn-primary flex-1"
-            disabled={!isSavable(draft)}
             onClick={() => {
               save();
               onClose();

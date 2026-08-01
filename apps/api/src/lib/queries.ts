@@ -8,11 +8,8 @@ import { items, preferences } from "../db/schema";
 export const selectPreferenceColumns = {
   id: preferences.id,
   stance: preferences.stance,
-  reason: preferences.reason,
   note: preferences.note,
   visibility: preferences.visibility,
-  consentedAt: preferences.consentedAt,
-  consentVersion: preferences.consentVersion,
   updatedAt: preferences.updatedAt,
   item: {
     id: items.id,

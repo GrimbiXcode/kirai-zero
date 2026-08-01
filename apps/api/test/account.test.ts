@@ -2,7 +2,6 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { createHash } from "node:crypto";
 import { eq, or, sql as raw } from "drizzle-orm";
-import { CONSENT_VERSION } from "shared";
 import {
   friendRequests,
   friendships,
@@ -44,8 +43,7 @@ describe("data export", () => {
   it("contains the account, its preferences and its connections", async () => {
     const koriander = await findItemId(app, anna, "Koriander");
     await setPreference(app, anna, koriander, {
-      stance: "avoid",
-      reason: "taste",
+      stance: "dislike",
       note: "schmeckt nach Seife",
     });
     await app.inject({
@@ -84,31 +82,9 @@ describe("data export", () => {
     expect(response.body).not.toContain(ben.email);
   });
 
-  it("includes the consent record for special-category entries", async () => {
-    const erdnuesse = await findItemId(app, anna, "Erdnüsse");
-    await setPreference(app, anna, erdnuesse, {
-      stance: "avoid",
-      reason: "allergy",
-      consentGiven: true,
-    });
-
-    const response = await app.inject({
-      method: "GET",
-      url: "/api/me/export",
-      headers: anna.auth,
-    });
-
-    // Art. 15 covers the consent too: a person must be able to see what they
-    // agreed to and when.
-    const entry = response.json().preferences[0];
-    expect(entry.reason).toBe("allergy");
-    expect(entry.consentVersion).toBe(CONSENT_VERSION);
-    expect(entry.consentedAt).toEqual(expect.any(String));
-  });
-
   it("is limited to the requesting account", async () => {
     const koriander = await findItemId(app, anna, "Koriander");
-    await setPreference(app, anna, koriander, { stance: "avoid" });
+    await setPreference(app, anna, koriander, { stance: "dislike" });
 
     const response = await app.inject({
       method: "GET",
@@ -127,7 +103,7 @@ describe("data export", () => {
 describe("account deletion", () => {
   it("cuts off access and visibility the moment it is requested", async () => {
     const koriander = await findItemId(app, anna, "Koriander");
-    await setPreference(app, anna, koriander, { stance: "avoid" });
+    await setPreference(app, anna, koriander, { stance: "dislike" });
     await befriend(app, anna, ben);
 
     await app.inject({ method: "DELETE", url: "/api/me", headers: anna.auth });
@@ -177,7 +153,7 @@ describe("account deletion", () => {
 
   it("erases the marked row and its data on the next housekeeping run", async () => {
     const koriander = await findItemId(app, anna, "Koriander");
-    await setPreference(app, anna, koriander, { stance: "avoid" });
+    await setPreference(app, anna, koriander, { stance: "dislike" });
     await app.inject({ method: "DELETE", url: "/api/me", headers: anna.auth });
 
     const purged = await purgeDeletedAccounts(app.db);
@@ -199,7 +175,7 @@ describe("account deletion", () => {
 
   it("removes every trace of the account", async () => {
     const koriander = await findItemId(app, anna, "Koriander");
-    await setPreference(app, anna, koriander, { stance: "avoid" });
+    await setPreference(app, anna, koriander, { stance: "dislike" });
     await befriend(app, anna, ben);
 
     const deleted = await app.inject({

@@ -1,6 +1,6 @@
 # Datenschutzkonzept kirai-zero
 
-Stand: MVP-Kern mit Einwilligungsschranke und Löschpipeline. Dieses Dokument
+Stand: MVP-Kern ohne Begründungsfeld, mit Löschpipeline. Dieses Dokument
 beschreibt, was die Anwendung technisch tut. Es ersetzt keine rechtliche
 Prüfung — es bereitet sie vor. Wie diese Prüfung abläuft, steht in
 [`legal-review-checklist.md`](legal-review-checklist.md); das dabei
@@ -49,30 +49,31 @@ das nicht unbemerkt zurückkommt.
 | | |
 |---|---|
 | **Zweck** | Kern des Dienstes: Vorlieben und Abneigungen für Freundinnen und Freunde sichtbar machen |
-| **Datenkategorien** | Verweis auf einen Katalogeintrag, Haltung (`stance`), Begründung (`reason`), freie Notiz (max. 280 Zeichen), Sichtbarkeit, Einwilligungsnachweis |
-| **Besonderheit** | Vier der sechs Gründe sind **besondere Kategorien** nach Art. 9 Abs. 1 DSGVO: `allergy` und `intolerance` sind Gesundheitsdaten, `religious` und `ethical` offenbaren religiöse oder weltanschauliche Überzeugungen |
-| **Rechtsgrundlage** | Art. 6 Abs. 1 lit. b DSGVO für gewöhnliche Einträge; für die vier genannten Gründe Art. 6 Abs. 1 lit. a **und** Art. 9 Abs. 2 lit. a (ausdrückliche Einwilligung), in der Schweiz Art. 6 Abs. 7 lit. a revDSG |
+| **Datenkategorien** | Verweis auf einen Katalogeintrag, Haltung (`stance`), freie Notiz (max. 280 Zeichen), Sichtbarkeit |
+| **Rechtsgrundlage** | Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung), Art. 31 Abs. 2 lit. a revDSG |
 | **Löschung** | Jederzeit einzeln durch die betroffene Person, vollständig bei Kontolöschung |
 | **Tabelle** | `preferences` |
 
-**Einwilligung.** Kein Grund muss angegeben werden; die Voreinstellung ist
-«Geschmack», und die App ist ohne jede Art.-9-Angabe voll nutzbar. Wird einer
-der vier besonderen Gründe gewählt, verlangt die App eine eigene, unvorbelegte
-Bestätigung, bevor gespeichert werden kann — ein blosser Hinweistext wäre keine
-ausdrückliche Erklärung im Sinn von Art. 9 Abs. 2 lit. a. Der Server prüft das
-ebenfalls und antwortet sonst mit `consent_required`; die Prüfung hängt
-**nicht** an der Sichtbarkeit, weil Art. 9 die Verarbeitung selbst beschränkt
-und nicht erst die Weitergabe.
+**Keine besonderen Kategorien.** Die App fragt bewusst **nicht**, warum jemand
+etwas nicht mag. Ein Eintrag sagt nur: *bekomme ich das vorgesetzt oder
+geschenkt, esse ich es nicht bzw. werfe es weg.* Damit werden weder
+Gesundheitsdaten noch religiöse oder weltanschauliche Überzeugungen erhoben.
+Es gibt folglich keine Verarbeitung nach Art. 9 Abs. 1 DSGVO und keine
+besonders schützenswerten Personendaten nach Art. 5 lit. c revDSG — und
+entsprechend auch keine Einwilligung, keine Altersschranke nach Art. 8 DSGVO
+und keine Pflicht zur Datenschutz-Folgenabschätzung.
 
-Zum Nachweis (Art. 7 Abs. 1) speichert `preferences` Zeitpunkt (`consented_at`)
-und Fassung des Textes (`consent_version`). Der Widerruf ist so leicht wie die
-Erteilung: ein anderer Grund oder das Löschen des Eintrags entfernt beides.
+**Restrisiko Ableitbarkeit.** Nach EuGH C-184/20 genügt es für Art. 9, dass
+sich ein Merkmal ableiten lässt. Eine Liste mit «Schweinefleisch, Alkohol»
+kann auf eine Überzeugung hindeuten, auch wenn niemand danach gefragt hat.
+Das ist einer App über Essensvorlieben inhärent und lässt sich nicht
+wegdesignen. Was wir dagegen tun: nicht danach fragen, keine solche Struktur
+anlegen, nicht danach filtern können, keinen Zweck damit verfolgen — und jeden
+Eintrag auf «Nur für mich» stellbar machen.
 
-**Vorbehalt zur Ableitbarkeit.** Nach EuGH C-184/20 genügt es für Art. 9, dass
-sich ein Merkmal ableiten lässt — «kein Schweinefleisch» kann auf eine religiöse
-Überzeugung hindeuten, auch ohne dass jemand `religious` wählt. Das lässt sich
-technisch nicht ausschliessen. Der Einwilligungstext benennt es deshalb
-ausdrücklich, und jeder Eintrag lässt sich auf «Nur für mich» stellen.
+**Notizfeld.** Der Freitext gehört der Person und wird von uns nicht
+ausgewertet. Wer dort etwas Heikles hineinschreibt, tut das selbstbestimmt;
+die App legt es weder nahe noch strukturiert sie es.
 
 ### V4 — Freundschaften und Anfragen
 
@@ -105,8 +106,7 @@ ausdrücklich, und jeder Eintrag lässt sich auf «Nur für mich» stellen.
 
 Im Export erscheinen Dritte (Freundinnen und Freunde) nur mit Handle und
 Anzeigename — also mit Daten, welche die exportierende Person ohnehin sieht.
-Nie mit E-Mail-Adresse. Der Einwilligungsnachweis ist Teil des Exports, damit
-nachvollziehbar bleibt, wozu man wann zugestimmt hat.
+Nie mit E-Mail-Adresse.
 
 ## Löschprozess und Aufbewahrung
 
@@ -136,14 +136,48 @@ beides existiert nicht mehr. Eine Wiederherstellung gibt es bewusst nicht.
 
 Backups werden **90 Tage** aufbewahrt und danach automatisch gelöscht.
 Spätestens damit verschwinden auch gelöschte Konten aus den Sicherungen. Ein
-gezieltes Löschen einzelner Personen aus bestehenden Backups findet nicht
+gezieltes Löschen einzelner Personen aus bestehenden Sicherungen findet nicht
 statt: bei verschlüsselten Vollsicherungen ist das nicht sinnvoll möglich, und
-die Sicherungen bleiben bis zum Ablauf der Frist gesperrt — sie werden
-ausschliesslich zur Wiederherstellung nach einem Ausfall verwendet. Wird eine
-Sicherung eingespielt, sind die zwischenzeitlich eingegangenen Löschbegehren
-erneut auszuführen; dafür ist ein Protokoll der Löschungen zu führen.
-**Diese Position ist rechtlich zu bestätigen** — sie steht als offener Punkt
-in der Prüf-Checkliste.
+die Sicherungen werden ausschliesslich zur Wiederherstellung nach einem
+Ausfall verwendet.
+
+### Wiederherstellung aus einer Sicherung
+
+Ein Restore kann Konten zurückbringen, die zwischenzeitlich gelöscht wurden.
+Deshalb gilt verbindlich:
+
+1. Die Wiederherstellung wird protokolliert: Zeitpunkt, Stand der eingespielten
+   Sicherung, Anlass.
+2. **Alle** Personen in der wiederhergestellten Datenbank werden per E-Mail
+   informiert — ausdrücklich auch jene, deren Konto durch den Restore wieder
+   existiert. Gerade sie müssen es erfahren, denn sie haben ihr Konto gelöscht
+   geglaubt.
+3. Die Mail nennt den Vorgang, den Stand und die Handlungsmöglichkeit: Konto
+   erneut löschen oder sich beim Support melden.
+
+Der Versand erfolgt heute manuell als Teil des Restore-Vorgangs; die App
+verschickt im Normalbetrieb keine E-Mails. Sobald das automatisiert wird, ist
+der Mailanbieter ein Auftragsverarbeiter und braucht einen AVV.
+
+#### Textvorlage
+
+> **Betreff:** Wichtig: Wiederherstellung der kirai-zero-Datenbank
+>
+> Hallo
+>
+> wir mussten am {DATUM} eine Sicherung unserer Datenbank einspielen. Der
+> Datenstand entspricht dadurch dem {STAND-DATUM}. Änderungen, die du danach
+> vorgenommen hast, können verloren gegangen sein.
+>
+> Wichtig, falls du dein Konto nach dem {STAND-DATUM} gelöscht hast: Durch die
+> Wiederherstellung kann dein Konto samt Einträgen wieder vorhanden sein. Das
+> war nicht beabsichtigt. Bitte lösche es in diesem Fall erneut unter
+> Einstellungen → Konto löschen, oder melde dich bei {SUPPORT-ADRESSE} — wir
+> erledigen es dann für dich.
+>
+> Es tut uns leid für die Umstände.
+>
+> kirai-zero
 
 ## Technische und organisatorische Massnahmen
 
@@ -164,20 +198,17 @@ in der Prüf-Checkliste.
 ## Offene Punkte vor Produktivstart
 
 Der Ablauf dazu steht in [`legal-review-checklist.md`](legal-review-checklist.md),
-das Prüfdokument in [`dpia.md`](dpia.md).
+die freiwillige Risikoeinschätzung in [`dpia.md`](dpia.md).
 
-1. Datenschutz-Folgenabschätzung fertigstellen und Restrisiko einschätzen
-2. Mindestalter festlegen und abfragen (Art. 8 DSGVO) — hier tut die App
-   bislang nichts
-3. Prüfen, ob ein Datenschutzbeauftragter nach Art. 37 Abs. 1 lit. c DSGVO
-   nötig ist; in der Schweiz Berater nach Art. 10 revDSG erwägen
-4. Datenschutzerklärung und Impressum verfassen und im UI verlinken
-5. Auftragsverarbeitungsvertrag mit dem Hoster (Hetzner, Infomaniak, Exoscale)
-6. Technisch belegen, dass die 90-Tage-Regel für Backups beim gewählten Hoster
-   tatsächlich greift, und die Behandlung von Löschbegehren beim Einspielen
-   einer Sicherung rechtlich bestätigen lassen
-7. Prüfen, ob ein Vertreter nach Art. 27 DSGVO bzw. Art. 14 revDSG nötig ist
+1. Datenschutzerklärung und Impressum verfassen und im UI verlinken
+2. Auftragsverarbeitungsvertrag mit dem Hoster (Hetzner, Infomaniak, Exoscale)
+3. Technisch belegen, dass die 90-Tage-Regel für Backups beim gewählten Hoster
+   tatsächlich greift
+4. Handlungsfähigkeit Minderjähriger beim Vertragsschluss in den AGB regeln —
+   Art. 8 DSGVO greift nicht mehr, das nationale Vertragsrecht bleibt davon
+   nach Art. 8 Abs. 3 aber unberührt
+5. Prüfen, ob ein Vertreter nach Art. 27 DSGVO bzw. Art. 14 revDSG nötig ist
    (abhängig vom Sitz des Betreibers)
-8. Ratenbegrenzung arbeitet im Speicher auf Basis der IP-Adresse. Sie wird
+6. Ratenbegrenzung arbeitet im Speicher auf Basis der IP-Adresse. Sie wird
    nicht persistiert und nicht geloggt; bei einem Wechsel auf einen
    gemeinsamen Speicher (Redis) ist das erneut zu bewerten

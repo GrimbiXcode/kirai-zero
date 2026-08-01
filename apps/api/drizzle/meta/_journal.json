@@ -15,6 +15,13 @@
       "when": 1785618421091,
       "tag": "0001_consent_and_soft_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785622852753,
+      "tag": "0002_drop_reason_and_consent",
+      "breakpoints": true
     }
   ]
 }

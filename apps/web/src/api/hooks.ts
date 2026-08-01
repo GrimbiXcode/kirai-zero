@@ -138,11 +138,8 @@ export function usePreferences() {
 export interface PreferenceInput {
   itemId: string;
   stance: PreferenceDto["stance"];
-  reason: PreferenceDto["reason"];
   note?: string;
   visibility: PreferenceDto["visibility"];
-  /** Required by the API for special-category reasons (Art. 9 GDPR). */
-  consentGiven?: boolean;
 }
 
 export function useUpsertPreference() {

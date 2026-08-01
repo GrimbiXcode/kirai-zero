@@ -36,10 +36,8 @@ export function MyListsPage() {
     await upsert.mutateAsync({
       itemId: editing.item.id,
       stance: draft.stance,
-      reason: draft.reason,
       note: draft.note.trim() === "" ? undefined : draft.note.trim(),
       visibility: draft.visibility,
-      consentGiven: draft.consentGiven,
     });
   }
 
@@ -98,6 +96,9 @@ export function MyListsPage() {
             >
               {t("lists.dislikes")}
             </h2>
+            {/* Spelling the meaning out once is what makes the column
+                unambiguous now that there is no reason field to qualify it. */}
+            <p className="mb-2 text-xs text-muted">{t("lists.dislikeMeaning")}</p>
             {dislikes.length === 0 ? (
               <p className="text-sm text-muted">{t("lists.empty.dislikes")}</p>
             ) : (
