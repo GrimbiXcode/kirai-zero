@@ -1,0 +1,114 @@
+# kirai-zero
+
+Eintragen, was man mag und was nicht — und es mit Freundinnen und Freunden
+teilen. Damit Geschenke nicht im Müll landen und beim Abendessen nichts auf den
+Tisch kommt, das jemand nicht verträgt.
+
+*kirai* (嫌い) ist japanisch für „nicht mögen". Ziel sind null unerwünschte
+Geschenke.
+
+## Was der MVP kann
+
+- Konto anlegen, an- und abmelden
+- Vorlieben und Abneigungen erfassen: Haltung (von „Liebe ich" bis „Gar nicht"),
+  Begründung (Geschmack, Allergie, Unverträglichkeit, Überzeugung, Religion),
+  optionale Notiz, Sichtbarkeit pro Eintrag
+- Freundschaftsanfragen senden, annehmen, ablehnen, beenden
+- Das Profil einer befreundeten Person ansehen — Allergien und
+  Unverträglichkeiten stehen hervorgehoben zuoberst
+- Eigene Daten exportieren und das Konto sofort löschen
+
+Läuft als Webapp/PWA und, über Capacitor aus derselben Codebasis, als App für
+iOS und Android.
+
+**Noch nicht enthalten:** Eventplanung mit Gäste-Aggregation, Präferenz-Anfragen
+an Freunde („magst du X?"), Push-Benachrichtigungen. Datenmodell und API sind so
+geschnitten, dass diese Features additiv dazukommen.
+
+## Aufbau
+
+```
+apps/api        Fastify + Drizzle + PostgreSQL
+apps/web        Vite + React, PWA, Capacitor-Wrapper
+packages/shared Zod-Schemas, Enums und Typen für beide Seiten
+docs/           Datenschutzkonzept und Architekturentscheidungen
+```
+
+Voraussetzungen: Node 22+, pnpm 10+, PostgreSQL 16 (oder Docker).
+
+## Loslegen
+
+```bash
+cp .env.example .env
+docker compose up -d postgres        # oder eine lokale PostgreSQL-Instanz
+pnpm install
+pnpm db:migrate
+pnpm db:seed                         # ~250 Katalogeinträge auf Deutsch
+pnpm dev                             # API auf :3000, Web auf :5173
+```
+
+Die Datenbank `kirai_test` legt docker-compose beim ersten Start mit an; ohne
+Docker einmalig `createdb kirai_test` (und `createdb kirai_e2e` für die
+End-to-End-Tests).
+
+## Tests
+
+```bash
+pnpm test        # API-Integrationstests (Postgres nötig) + Web-Unit-Tests
+pnpm test:e2e    # Playwright gegen den echten Stack
+pnpm typecheck
+```
+
+Die API-Tests laufen gegen `TEST_DATABASE_URL` und legen den Schwerpunkt auf
+Autorisierung: Fremde sehen nichts, private Einträge verlassen den Server nicht,
+das Beenden einer Freundschaft entzieht den Zugriff sofort, eine Kontolöschung
+lässt nichts zurück.
+
+Bringt die Umgebung ein Chromium mit, dessen Build-Nummer nicht zu Playwright
+passt, hilft `PLAYWRIGHT_CHROMIUM_PATH=/pfad/zu/chromium pnpm test:e2e`.
+
+## Handy-Apps
+
+```bash
+pnpm --filter web build
+pnpm --filter web exec cap add ios      # einmalig
+pnpm --filter web exec cap add android  # einmalig
+pnpm --filter web exec cap sync
+```
+
+Die gebauten Assets werden in die App gepackt; `server.url` ist bewusst nicht
+gesetzt, es wird zur Laufzeit nichts nachgeladen. Die API-Adresse kommt aus
+`VITE_API_URL` zur Buildzeit.
+
+Auf dem Web läuft die Anmeldung über ein httpOnly-Cookie, in den nativen Builds
+über ein Bearer-Token im sicheren Gerätespeicher — die API akzeptiert beides.
+
+## Datenschutz
+
+Kern der Anwendung, nicht Beiwerk:
+
+- Gespeichert werden nur E-Mail, Benutzername, Anzeigename, Passwort-Hash und
+  die selbst erfassten Einträge
+- Keine Analyse, kein Tracking, keine Werbung, keine externen Skripte oder
+  Schriften — die API sendet `default-src 'self'`
+- Sitzungen ohne IP-Adresse und ohne User-Agent; Logs ohne Client-Adresse
+- Export und Löschung sind im Produkt, nicht auf Anfrage per E-Mail
+
+Details, offene Punkte vor einem Produktivstart und das Verarbeitungsverzeichnis
+stehen in [`docs/privacy-concept.md`](docs/privacy-concept.md). Warum die
+Architektur so aussieht, wie sie aussieht, steht in
+[`docs/decisions.md`](docs/decisions.md).
+
+## Betrieb
+
+Für Produktion mindestens setzen:
+
+```
+NODE_ENV=production
+DATABASE_URL=…            # PostgreSQL in EU oder CH
+CORS_ORIGINS=https://…    # Web-Origin, plus capacitor://localhost für iOS
+COOKIE_SECURE=true        # verlangt TLS
+```
+
+Die Sitzungsbereinigung läuft im API-Prozess selbst (stündlich); ein Cronjob ist
+nicht nötig.

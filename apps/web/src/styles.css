@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/*
+ * Everything is bundled: no font, icon or stylesheet is fetched from another
+ * host. The API sends `default-src 'self'`, and the app is built to satisfy it.
+ */
+@theme {
+  --color-paper: #fdfbf7;
+  --color-ink: #241f1b;
+  --color-muted: #6b625a;
+  --color-line: #e7e0d6;
+  --color-accent: #b4531f;
+  --color-accent-soft: #fbeee5;
+  --color-yes: #2f6f4f;
+  --color-yes-soft: #e8f2ec;
+  --color-no: #a33327;
+  --color-no-soft: #fbecea;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  /* Keeps the bottom navigation clear of the home indicator on iOS. */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@layer components {
+  /* Tailwind v4 only lets @apply pull in real utilities, so the shared button
+     base is one rule over all variants rather than a class they compose. */
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost,
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5
+      text-sm font-medium transition-colors disabled:cursor-not-allowed
+      disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-accent text-white hover:bg-accent/90;
+  }
+  .btn-secondary {
+    @apply border border-line bg-white text-ink hover:bg-accent-soft;
+  }
+  .btn-ghost {
+    @apply text-muted hover:bg-line/40 hover:text-ink;
+  }
+  .btn-danger {
+    @apply border border-no/30 bg-no-soft text-no hover:bg-no/10;
+  }
+
+  .card {
+    @apply rounded-2xl border border-line bg-white p-4;
+  }
+
+  .field-label {
+    @apply mb-1 block text-sm font-medium text-ink;
+  }
+  .field-hint {
+    @apply mt-1 text-xs text-muted;
+  }
+  .field-input {
+    @apply w-full rounded-xl border border-line bg-white px-3 py-2.5 text-base
+      text-ink outline-none placeholder:text-muted/70
+      focus:border-accent focus:ring-2 focus:ring-accent/20;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs
+      font-medium;
+  }
+}
+
+/* Respect a reduced-motion preference rather than animating regardless. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
