@@ -2,6 +2,8 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   useAcceptFriendRequest,
+  useCreatePerson,
+  usePersons,
   useCancelFriendRequest,
   useDeclineFriendRequest,
   useFriendRequests,
@@ -25,10 +27,21 @@ export function FriendsPage() {
   const decline = useDeclineFriendRequest();
   const cancel = useCancelFriendRequest();
   const removeFriend = useRemoveFriend();
+  const persons = usePersons();
+  const createPerson = useCreatePerson();
+  const [personName, setPersonName] = useState("");
 
   function submitSearch(event: FormEvent) {
     event.preventDefault();
     setSubmittedHandle(handleInput.trim().toLowerCase());
+  }
+
+  async function submitPerson(event: FormEvent) {
+    event.preventDefault();
+    const displayName = personName.trim();
+    if (displayName === "") return;
+    await createPerson.mutateAsync({ displayName });
+    setPersonName("");
   }
 
   const found = search.data?.[0];
@@ -201,6 +214,61 @@ export function FriendsPage() {
                     {t("friends.remove")}
                   </button>
                 </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section aria-labelledby="persons-heading">
+        <h2
+          id="persons-heading"
+          className="mb-2 text-sm font-semibold tracking-wide text-muted uppercase"
+        >
+          {t("persons.section")}
+        </h2>
+        <p className="mb-3 text-sm text-muted">{t("persons.sectionIntro")}</p>
+
+        <form onSubmit={submitPerson} className="mb-3 flex gap-2">
+          <div className="flex-1">
+            <label className="sr-only" htmlFor="person-name">
+              {t("persons.create.label")}
+            </label>
+            <input
+              id="person-name"
+              className="field-input"
+              placeholder={t("persons.create.placeholder")}
+              value={personName}
+              onChange={(event) => setPersonName(event.target.value)}
+            />
+          </div>
+          <button
+            type="submit"
+            className="btn-secondary"
+            disabled={createPerson.isPending}
+          >
+            {t("persons.create.submit")}
+          </button>
+        </form>
+
+        {persons.data?.length === 0 ? (
+          <p className="text-sm text-muted">{t("persons.empty")}</p>
+        ) : (
+          <ul className="space-y-2">
+            {persons.data?.map((person) => (
+              <li key={person.id} className="card">
+                <Link
+                  to={`/personen/${person.id}`}
+                  aria-label={t("persons.open")}
+                >
+                  <p className="font-medium">{person.displayName}</p>
+                  <p className="text-sm text-muted">
+                    {t("persons.entryCount", { count: person.entryCount })}
+                    {person.linkedUser
+                      ? ` · ${t("persons.linkedTo", { handle: person.linkedUser.handle })}`
+                      : ""}
+                  </p>
+                </Link>
               </li>
             ))}
           </ul>

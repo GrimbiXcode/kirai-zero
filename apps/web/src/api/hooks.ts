@@ -12,8 +12,11 @@ import type {
   FriendRequestDto,
   ItemDto,
   ItemKind,
+  PersonDetailDto,
+  PersonDto,
   PreferenceDto,
   PublicUser,
+  Stance,
 } from "shared";
 import { api, ApiError } from "./client";
 import { clearToken, saveToken } from "./token";
@@ -27,6 +30,8 @@ export const queryKeys = {
   itemSearch: (query: string, kind?: ItemKind) =>
     ["items", query, kind ?? "all"] as const,
   userSearch: (handle: string) => ["user-search", handle] as const,
+  persons: ["persons"] as const,
+  person: (id: string) => ["person", id] as const,
 };
 
 /**
@@ -278,4 +283,133 @@ export function useDeleteAccount() {
       await signOutLocally(queryClient);
     },
   });
+}
+
+
+// --- Person profiles -------------------------------------------------------
+
+/** Anything that changes a person also changes the friend profile it may be
+ *  linked to, so both are invalidated together. */
+function usePersonMutation<TInput>(
+  mutationFn: (input: TInput) => Promise<{ person: PersonDetailDto }>,
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: async (data) => {
+      queryClient.setQueryData(queryKeys.person(data.person.id), data.person);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.persons }),
+        queryClient.invalidateQueries({ queryKey: ["friend-profile"] }),
+      ]);
+    },
+  });
+}
+
+export function usePersons() {
+  return useQuery({
+    queryKey: queryKeys.persons,
+    queryFn: async () => {
+      const response = await api<{ persons: PersonDto[] }>("/api/persons");
+      return response.persons;
+    },
+  });
+}
+
+export function usePerson(id: string) {
+  return useQuery({
+    queryKey: queryKeys.person(id),
+    queryFn: async () => {
+      const response = await api<{ person: PersonDetailDto }>(
+        `/api/persons/${id}`,
+      );
+      return response.person;
+    },
+    retry: false,
+  });
+}
+
+export function useCreatePerson() {
+  return usePersonMutation((input: { displayName: string; note?: string }) =>
+    api<{ person: PersonDetailDto }>("/api/persons", {
+      method: "POST",
+      body: input,
+    }),
+  );
+}
+
+export function useUpdatePerson(id: string) {
+  return usePersonMutation((input: { displayName?: string; note?: string | null }) =>
+    api<{ person: PersonDetailDto }>(`/api/persons/${id}`, {
+      method: "PATCH",
+      body: input,
+    }),
+  );
+}
+
+export function useDeletePerson() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api<{ ok: true }>(`/api/persons/${id}`, { method: "DELETE" }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.persons }),
+        queryClient.invalidateQueries({ queryKey: ["friend-profile"] }),
+      ]);
+    },
+  });
+}
+
+/** Fetches the profile holding my notes about a friend, creating it on first
+ *  use — the client never has to know whether it already existed. */
+export function usePersonForFriend() {
+  return usePersonMutation((userId: string) =>
+    api<{ person: PersonDetailDto }>(`/api/persons/for-friend/${userId}`, {
+      method: "POST",
+    }),
+  );
+}
+
+export interface PersonEntryInput {
+  personId: string;
+  itemId: string;
+  stance: Stance;
+  note?: string;
+}
+
+export function useUpsertPersonEntry() {
+  return usePersonMutation(({ personId, itemId, ...body }: PersonEntryInput) =>
+    api<{ person: PersonDetailDto }>(
+      `/api/persons/${personId}/entries/${itemId}`,
+      { method: "PUT", body },
+    ),
+  );
+}
+
+export function useDeletePersonEntry() {
+  return usePersonMutation(
+    ({ personId, itemId }: { personId: string; itemId: string }) =>
+      api<{ person: PersonDetailDto }>(
+        `/api/persons/${personId}/entries/${itemId}`,
+        { method: "DELETE" },
+      ),
+  );
+}
+
+export function useLinkPerson(id: string) {
+  return usePersonMutation((handle: string) =>
+    api<{ person: PersonDetailDto }>(`/api/persons/${id}/link`, {
+      method: "POST",
+      body: { handle },
+    }),
+  );
+}
+
+export function useUnlinkPerson(id: string) {
+  return usePersonMutation(() =>
+    api<{ person: PersonDetailDto }>(`/api/persons/${id}/unlink`, {
+      method: "POST",
+    }),
+  );
 }

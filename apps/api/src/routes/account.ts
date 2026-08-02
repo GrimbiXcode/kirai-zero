@@ -5,12 +5,14 @@ import {
   friendRequests,
   friendships,
   items,
+  persons,
   preferences,
   sessions,
   users,
 } from "../db/schema";
 import { authenticate, currentUser } from "../lib/auth";
 import { toItemDto, toPreferenceDto } from "../lib/dto";
+import { loadPersonEntries } from "../lib/persons";
 import { selectPreferenceColumns } from "../lib/queries";
 import { SESSION_COOKIE } from "../lib/sessions";
 
@@ -97,6 +99,36 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
         : { handle: null, displayName: null };
     };
 
+    // Person profiles are the requester's own notes, so they belong in their
+    // export — with the linked account named only by handle, as everywhere.
+    const personRows = await app.db
+      .select()
+      .from(persons)
+      .where(eq(persons.ownerId, viewer.id))
+      .orderBy(asc(persons.displayName));
+    const linkedIds = personRows.flatMap((row) =>
+      row.linkedUserId ? [row.linkedUserId] : [],
+    );
+    const linkedHandles =
+      linkedIds.length > 0
+        ? await app.db
+            .select({ id: users.id, handle: users.handle })
+            .from(users)
+            .where(inArray(users.id, linkedIds))
+        : [];
+    const handleById = new Map(linkedHandles.map((row) => [row.id, row.handle]));
+    const exportedPersons = await Promise.all(
+      personRows.map(async (row) => ({
+        displayName: row.displayName,
+        note: row.note,
+        linkedTo: row.linkedUserId
+          ? (handleById.get(row.linkedUserId) ?? null)
+          : null,
+        createdAt: row.createdAt.toISOString(),
+        entries: await loadPersonEntries(app.db, row),
+      })),
+    );
+
     reply.header(
       "content-disposition",
       'attachment; filename="kirai-zero-export.json"',
@@ -127,6 +159,7 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
         respondedAt: row.respondedAt?.toISOString() ?? null,
       })),
       itemsCreated: createdItems.map(toItemDto),
+      persons: exportedPersons,
     };
   });
 
@@ -162,6 +195,12 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
         .where(eq(users.id, viewer.id));
 
       await tx.delete(sessions).where(eq(sessions.userId, viewer.id));
+      // Other people's notes about this account lose their link immediately —
+      // the ON DELETE SET NULL would only fire once the purge job runs.
+      await tx
+        .update(persons)
+        .set({ linkedUserId: null, updatedAt: now })
+        .where(eq(persons.linkedUserId, viewer.id));
       await tx
         .delete(friendships)
         .where(

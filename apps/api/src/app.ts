@@ -2,6 +2,7 @@ import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
+import fastifyStatic from "@fastify/static";
 import Fastify, {
   type FastifyError,
   type FastifyInstance,
@@ -14,6 +15,7 @@ import type { AuthenticatedUser } from "./lib/sessions";
 import { accountRoutes } from "./routes/account";
 import { authRoutes } from "./routes/auth";
 import { itemRoutes } from "./routes/items";
+import { personRoutes } from "./routes/persons";
 import { preferenceRoutes } from "./routes/preferences";
 import { socialRoutes } from "./routes/social";
 
@@ -117,7 +119,32 @@ export async function buildApp({
     return reply.code(500).send(body);
   });
 
-  app.setNotFoundHandler((_request, reply) => {
+  /**
+   * In the container image one process serves both the API and the built web
+   * client, so everything lives on a single origin: no CORS for the web build,
+   * and the session cookie is same-site without special cases. In development
+   * `WEB_ROOT` is unset and Vite serves the client on its own port.
+   */
+  if (env.WEB_ROOT) {
+    await app.register(fastifyStatic, {
+      root: env.WEB_ROOT,
+      // No catch-all route: unknown paths fall through to the handler below,
+      // which decides between the app shell and a JSON 404.
+      wildcard: false,
+    });
+  }
+
+  app.setNotFoundHandler((request, reply) => {
+    // A client-side route such as /freunde/<id> is not a file and not an API
+    // path — the browser must get the app shell so the router can take over.
+    const wantsAppShell =
+      env.WEB_ROOT !== undefined &&
+      request.method === "GET" &&
+      !request.url.startsWith("/api/") &&
+      (request.headers.accept ?? "").includes("text/html");
+
+    if (wantsAppShell) return reply.sendFile("index.html");
+
     const body: ApiErrorBody = { error: "not_found", message: "Not found" };
     return reply.code(404).send(body);
   });
@@ -128,6 +155,7 @@ export async function buildApp({
   await app.register(itemRoutes, { prefix: "/api/items" });
   await app.register(preferenceRoutes, { prefix: "/api/me/preferences" });
   await app.register(accountRoutes, { prefix: "/api/me" });
+  await app.register(personRoutes, { prefix: "/api/persons" });
   await app.register(socialRoutes, { prefix: "/api" });
 
   return app;

@@ -1,0 +1,81 @@
+name: Tests
+
+# Every push and every pull request. The suites are the safety net for the
+# access rules — they should never be optional.
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # A pull request from this repository repeats the push above commit for
+    # commit, which would run the whole suite twice for every change. Fork pull
+    # requests raise no push event here, so those still need this trigger.
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kirai
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/kirai
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/kirai_test
+      E2E_DATABASE_URL: postgres://postgres:postgres@localhost:5432/kirai_e2e
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create the test and end-to-end databases
+        run: |
+          psql "$DATABASE_URL" -c 'CREATE DATABASE kirai_test'
+          psql "$DATABASE_URL" -c 'CREATE DATABASE kirai_e2e'
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit and integration tests
+        run: pnpm test
+
+      # The end-to-end run is what proves the access rules hold through the
+      # real client, so it belongs in the same required job.
+      - name: Install the browser for the end-to-end run
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: pnpm test:e2e
+
+      - name: Keep the Playwright report of a failed run
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7

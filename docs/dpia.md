@@ -23,6 +23,7 @@ liest lieber ein vorhandenes Dokument als eine Behauptung.
 | Kontodaten | E-Mail, Handle, Anzeigename, Passwort-Hash | nein |
 | Präferenz | Gegenstand, Haltung, Notiz, Sichtbarkeit | nein |
 | Freundschaften | Nutzer-IDs, Status, Zeitstempel | nein |
+| Personen-Profile | Anzeigename, Notiz, Haltungen, optionaler Konto-Bezug | nein |
 
 Vollständig im Verarbeitungsverzeichnis in
 [`privacy-concept.md`](privacy-concept.md).
@@ -67,10 +68,17 @@ höchstens 24 h). Backups 90 Tage. Sitzungen längstens 30 Tage.
 | R3 | Kontoübernahme legt die gesamte Liste offen | niedrig | mittel | argon2id nach OWASP-Parametern, Sitzungstoken nur als SHA-256-Hash, Ratenbegrenzung auf Login und Registrierung, Login-Antwort ohne Kontoauskunft |
 | R4 | Daten überleben die Löschung | niedrig | hoch | Zugriff und Sichtbarkeit enden in derselben Transaktion, Identifikatoren sofort überschrieben, Job löscht endgültig; Backups verfallen nach 90 Tagen, Restore löst eine Benachrichtigung aller Betroffenen aus |
 | R5 | Jemand schreibt etwas Heikles ins freie Notizfeld | niedrig | niedrig | Freitext gehört der Person, wird nicht ausgewertet und nicht strukturiert; die App legt es weder nahe noch fragt sie danach |
+| R6 | Über eine Person werden Notizen geführt, von denen sie nichts weiss | hoch | niedrig | nur ein Anzeigename, kein weiterer Identifikator; Verknüpfung nur unter bestätigten Freunden; der Abgleich verschafft keinen Einblick über das Freundesprofil hinaus; Verknüpfung endet mit der Freundschaft. Offen bleibt die Bewertung nach Art. 14 und 15 — siehe Checkliste |
 
 ## 4. Restrisiko
 
-**R2 bleibt und ist der einzige nennenswerte Punkt.** Wer sieht, dass jemand
+**R2 und R6 bleiben.** R6 ist der Preis des Feature-Zwecks: eine
+Gedächtnisstütze über andere Menschen setzt voraus, dass man Dinge über sie
+festhält. Was ein Notizbuch auf Papier auch täte — nur dass hier ein
+Verantwortlicher dazwischensteht und die Pflichten nach Art. 14 und 15 zu
+klären hat.
+
+**R2 im Einzelnen.** Wer sieht, dass jemand
 Schweinefleisch und Alkohol meidet, kann daraus etwas schliessen. Das ist einer
 App über Essensvorlieben inhärent — sie kann es nicht verhindern, nur nicht
 selbst betreiben. Konkret:

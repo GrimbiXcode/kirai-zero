@@ -1,0 +1,102 @@
+name: Docker image
+
+# Same build, two outcomes:
+#
+#   push to main  → build and start it once, so a broken image is caught on the
+#                   trunk rather than at release time. Nothing is published.
+#   tag v*        → build and push to ghcr.io
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Work out the tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      # --- trunk: prove the image builds and runs, publish nothing ---
+
+      - name: Build the image
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          # Hand the result to the local daemon so the check below can run it.
+          load: true
+          tags: kirai-zero:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start it against a database and check it answers
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          set -euo pipefail
+          docker network create kirai-ci
+          docker run -d --name kirai-db --network kirai-ci \
+            -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres \
+            -e POSTGRES_DB=kirai postgres:16-alpine
+          for _ in $(seq 1 30); do
+            docker exec kirai-db pg_isready -U postgres > /dev/null 2>&1 && break
+            sleep 2
+          done
+
+          docker run -d --name kirai-app --network kirai-ci -p 3000:3000 \
+            -e DATABASE_URL=postgres://postgres:postgres@kirai-db:5432/kirai \
+            kirai-zero:ci
+          for _ in $(seq 1 30); do
+            curl -fsS http://localhost:3000/health > /dev/null 2>&1 && break
+            sleep 2
+          done
+
+          curl -fsS http://localhost:3000/health
+          # A healthy API that serves no client would still be a broken image,
+          # since this one is supposed to deliver both.
+          curl -fsS http://localhost:3000/ | grep -q '<div id="root">'
+          docker logs kirai-app
+
+      # --- release: publish ---
+
+      - name: Sign in to the registry
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          # Built in, so there is no secret to create; it is scoped to this
+          # repository and expires with the run.
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

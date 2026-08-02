@@ -20,6 +20,15 @@ function extractToken(
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 /**
+ * The origin this very request was addressed to. Behind a proxy Fastify
+ * derives both parts from the forwarded headers, which is why `trustProxy` is
+ * on in production.
+ */
+function ownOrigin(request: FastifyRequest): string {
+  return `${request.protocol}://${request.host}`;
+}
+
+/**
  * preHandler for every route that needs a signed-in user.
  *
  * Two transports are accepted because the app ships to two very different
@@ -27,9 +36,12 @@ const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
  * Capacitor build runs from `capacitor://localhost` and therefore sends the
  * token as a bearer header out of secure device storage.
  *
- * Cookie-authenticated writes additionally require an allowed Origin. Combined
- * with SameSite=Lax that closes CSRF without a token dance; bearer requests are
- * immune to CSRF by construction since no browser attaches the header for them.
+ * Cookie-authenticated writes additionally require the Origin to be either the
+ * server's own — the container image serves the web client from here, so those
+ * requests are same-origin and cannot be forged from another site — or one of
+ * the configured ones. Combined with SameSite=Lax that closes CSRF without a
+ * token dance; bearer requests are immune by construction, since no browser
+ * attaches that header on its own.
  */
 export async function authenticate(
   request: FastifyRequest,
@@ -40,7 +52,11 @@ export async function authenticate(
 
   if (extracted.source === "cookie" && !SAFE_METHODS.has(request.method)) {
     const origin = request.headers.origin;
-    if (!origin || !request.server.appEnv.CORS_ORIGINS.includes(origin)) {
+    const allowed =
+      origin !== undefined &&
+      (origin === ownOrigin(request) ||
+        request.server.appEnv.CORS_ORIGINS.includes(origin));
+    if (!allowed) {
       throw forbidden("bad_origin", "Origin not allowed for this request");
     }
   }

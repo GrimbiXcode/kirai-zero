@@ -29,12 +29,16 @@ export function PreferenceSheet({
   onSave,
   onDelete,
   onClose,
+  showVisibility = true,
 }: {
   item: ItemDto;
   existing?: PreferenceDto;
   onSave: (draft: PreferenceDraft) => void;
   onDelete?: () => void;
   onClose: () => void;
+  /** Off for notes about a person: those are private by construction, there is
+   *  nobody they could be shared with. */
+  showVisibility?: boolean;
 }) {
   const [stance, setStance] = useState<Stance>(existing?.stance ?? "like");
   const [note, setNote] = useState(existing?.note ?? "");
@@ -120,7 +124,7 @@ export function PreferenceSheet({
           />
         </div>
 
-        <fieldset className="mt-5">
+        <fieldset className={showVisibility ? "mt-5" : "hidden"}>
           <legend className="field-label">{t("lists.visibilityLabel")}</legend>
           <div className="flex flex-wrap gap-2">
             {VISIBILITIES.map((option) => (

@@ -1,0 +1,53 @@
+# Deployment template. Copy it to the server together with a .env file:
+#
+#   cp .env.deploy.example .env      # then fill in the values
+#   docker compose -f docker-compose.deploy.yml up -d
+#
+# The app container applies migrations and seeds the catalogue on start, so
+# there is no separate deployment step. See docs/decisions.md, entry 14.
+#
+# What this file does NOT do: terminate TLS. Put a reverse proxy (Caddy,
+# nginx, Traefik) in front of it — the session cookie needs COOKIE_SECURE=true,
+# which only works over HTTPS.
+
+services:
+  app:
+    image: ghcr.io/grimbixcode/kirai-zero:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://kirai:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/kirai
+      PORT: 3000
+      # Required behind TLS, and this app should only ever run behind TLS.
+      COOKIE_SECURE: "true"
+      # Only the origins of the native builds: the web client is served by this
+      # very container and is same-origin, which the server recognises on its
+      # own. Drop this line entirely if you do not ship the mobile apps.
+      CORS_ORIGINS: "capacitor://localhost,http://localhost"
+    ports:
+      # Bound to the loopback interface: the reverse proxy in front of it is
+      # the only thing that should reach the app directly.
+      - "127.0.0.1:3000:3000"
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kirai
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: kirai
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kirai"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # No published port: nothing outside this compose network needs the
+    # database, and not exposing it is one attack surface fewer.
+
+volumes:
+  pgdata:

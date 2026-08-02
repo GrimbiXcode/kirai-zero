@@ -50,6 +50,8 @@ describe("FriendProfilePage", () => {
           }),
           preference({ id: "d2", stance: "dislike" }),
         ],
+        myNotes: [],
+        personId: null,
       }),
     });
 

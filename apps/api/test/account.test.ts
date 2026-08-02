@@ -6,6 +6,8 @@ import {
   friendRequests,
   friendships,
   items,
+  personEntries,
+  persons,
   preferences,
   sessions,
   users,
@@ -80,6 +82,36 @@ describe("data export", () => {
     ).toContain("Grossmutters Guetzli");
     // A friend appears by handle and display name only — never by email.
     expect(response.body).not.toContain(ben.email);
+  });
+
+  it("includes the person profiles the requester keeps", async () => {
+    const koriander = await findItemId(app, anna, "Koriander");
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/persons",
+      headers: anna.auth,
+      payload: { displayName: "Oma Trudi", note: "mag es schlicht" },
+    });
+    await app.inject({
+      method: "PUT",
+      url: `/api/persons/${created.json().person.id}/entries/${koriander}`,
+      headers: anna.auth,
+      payload: { stance: "dislike" },
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/me/export",
+      headers: anna.auth,
+    });
+
+    const person = response.json().persons[0];
+    expect(person).toMatchObject({
+      displayName: "Oma Trudi",
+      note: "mag es schlicht",
+      linkedTo: null,
+    });
+    expect(person.entries[0].item.name).toBe("Koriander");
   });
 
   it("is limited to the requesting account", async () => {
@@ -250,6 +282,32 @@ describe("account deletion", () => {
       },
     });
     expect(reused.statusCode).toBe(201);
+  });
+
+  it("takes the person profiles of the deleted account with it", async () => {
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/persons",
+      headers: anna.auth,
+      payload: { displayName: "Oma Trudi" },
+    });
+    const koriander = await findItemId(app, anna, "Koriander");
+    await app.inject({
+      method: "PUT",
+      url: `/api/persons/${created.json().person.id}/entries/${koriander}`,
+      headers: anna.auth,
+      payload: { stance: "dislike" },
+    });
+
+    await app.inject({ method: "DELETE", url: "/api/me", headers: anna.auth });
+    await purgeDeletedAccounts(app.db);
+
+    const [remainingPersons, remainingEntries] = await Promise.all([
+      app.db.select({ id: persons.id }).from(persons).where(eq(persons.ownerId, anna.id)),
+      app.db.select({ id: personEntries.id }).from(personEntries),
+    ]);
+    expect(remainingPersons).toHaveLength(0);
+    expect(remainingEntries).toHaveLength(0);
   });
 
   it("keeps a catalogue item the deleted user contributed, without its author", async () => {

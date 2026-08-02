@@ -7,6 +7,7 @@ import { AuthPage } from "./routes/AuthPage";
 import { FriendProfilePage } from "./routes/FriendProfilePage";
 import { FriendsPage } from "./routes/FriendsPage";
 import { MyListsPage } from "./routes/MyListsPage";
+import { PersonPage } from "./routes/PersonPage";
 import { SettingsPage } from "./routes/SettingsPage";
 
 export function App() {
@@ -35,6 +36,7 @@ export function App() {
         <Route path="/" element={<MyListsPage />} />
         <Route path="/freunde" element={<FriendsPage />} />
         <Route path="/freunde/:userId" element={<FriendProfilePage />} />
+        <Route path="/personen/:personId" element={<PersonPage />} />
         <Route path="/einstellungen" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
