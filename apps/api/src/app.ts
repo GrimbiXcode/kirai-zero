@@ -2,6 +2,7 @@ import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
+import fastifyStatic from "@fastify/static";
 import Fastify, {
   type FastifyError,
   type FastifyInstance,
@@ -118,7 +119,32 @@ export async function buildApp({
     return reply.code(500).send(body);
   });
 
-  app.setNotFoundHandler((_request, reply) => {
+  /**
+   * In the container image one process serves both the API and the built web
+   * client, so everything lives on a single origin: no CORS for the web build,
+   * and the session cookie is same-site without special cases. In development
+   * `WEB_ROOT` is unset and Vite serves the client on its own port.
+   */
+  if (env.WEB_ROOT) {
+    await app.register(fastifyStatic, {
+      root: env.WEB_ROOT,
+      // No catch-all route: unknown paths fall through to the handler below,
+      // which decides between the app shell and a JSON 404.
+      wildcard: false,
+    });
+  }
+
+  app.setNotFoundHandler((request, reply) => {
+    // A client-side route such as /freunde/<id> is not a file and not an API
+    // path — the browser must get the app shell so the router can take over.
+    const wantsAppShell =
+      env.WEB_ROOT !== undefined &&
+      request.method === "GET" &&
+      !request.url.startsWith("/api/") &&
+      (request.headers.accept ?? "").includes("text/html");
+
+    if (wantsAppShell) return reply.sendFile("index.html");
+
     const body: ApiErrorBody = { error: "not_found", message: "Not found" };
     return reply.code(404).send(body);
   });

@@ -28,6 +28,13 @@ const envSchema = z.object({
     .enum(["true", "false"])
     .default("true")
     .transform((value) => value === "true"),
+  /**
+   * Directory with the built web client. Set in the container image, where one
+   * process serves both the API and the app from a single origin — which also
+   * means no CORS and no cross-site cookie handling. Unset in development,
+   * where Vite serves the client on its own port.
+   */
+  WEB_ROOT: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

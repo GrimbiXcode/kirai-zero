@@ -210,3 +210,42 @@ besteht aus einem frei gewählten Anzeigenamen — keine E-Mail, keine Nummer,
 kein Geburtsdatum. Die Pflichten nach Art. 14 und 15 DSGVO sind damit nicht
 erledigt, aber klein gehalten; sie stehen als offene Frage in
 `docs/legal-review-checklist.md`.
+
+## 14. Ein Image, das API und Webapp zusammen ausliefert
+
+Der API-Prozess liefert im Container auch den gebauten Web-Client aus
+(`WEB_ROOT`, siehe `apps/api/src/app.ts`). Ein Deployment besteht damit aus
+einem Container plus PostgreSQL statt aus zwei Images, einem Reverse Proxy
+dazwischen und einer CORS-Konfiguration, die stimmen muss.
+
+Der eigentliche Gewinn ist die gemeinsame Origin: kein CORS für den Web-Build,
+und das Sitzungscookie ist same-site ohne Sonderfälle. Für die nativen
+Capacitor-Builds bleibt CORS nötig, die laufen zwangsläufig cross-origin.
+
+Daraus folgte eine Korrektur am CSRF-Schutz. Er verlangte einen Origin aus
+`CORS_ORIGINS` — in der gemeinsamen Origin steht die eigene Adresse dort aber
+nicht drin, und jeder Schreibzugriff der Webapp scheiterte mit 403. Jetzt
+akzeptiert er zusätzlich die Origin, unter der die Anfrage tatsächlich
+eingegangen ist (`request.protocol` + `request.host`, hinter einem Proxy aus
+den Forwarded-Headern). Same-Origin-Anfragen sind per Definition nicht von
+einer fremden Seite fälschbar, ein bloss ähnlich aussehender Origin wird
+weiterhin abgewiesen. Beide Fälle sind getestet.
+
+Gefunden wurde das nicht durch Nachdenken, sondern indem das Image gegen eine
+echte Datenbank gestartet und die App im Browser bedient wurde.
+
+`packages/shared` muss dabei in das Bundle hinein (`noExternal` in
+`apps/api/tsup.config.ts`): es ist ein Quellcode-Paket ohne eigenen Build, und
+Node weigert sich, TypeScript aus `node_modules` zu laden.
+
+## 15. Migration und Seed im Entrypoint
+
+Der Container bringt die Datenbank beim Start auf Stand, bevor er bedient.
+Beides ist idempotent, und ein Deployment ist damit ein einzelnes
+`docker compose up -d` statt zweier Schritte, von denen man einen vergessen
+kann.
+
+Der Preis ist eine Annahme: **eine** Instanz. Mehrere Repliken gegen dieselbe
+Datenbank würden gleichzeitig migrieren; das bräuchte ein Advisory Lock. Wer
+dorthin skaliert, setzt `SKIP_MIGRATIONS=true` und lässt die Migration als
+eigenen Schritt laufen.

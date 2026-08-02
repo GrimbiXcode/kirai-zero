@@ -1,0 +1,17 @@
+node_modules
+**/node_modules
+**/dist
+**/build
+**/coverage
+.git
+.github
+.env
+.env.local
+*.log
+
+# Generated native projects and test output have no place in a build context.
+apps/web/ios
+apps/web/android
+apps/web/test-results
+apps/web/playwright-report
+docs

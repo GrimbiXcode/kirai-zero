@@ -220,4 +220,41 @@ describe("session handling", () => {
     });
     expect(allowed.statusCode).toBe(404);
   });
+
+  it("accepts a write from the origin it was addressed on", async () => {
+    const user = await registerUser(app);
+
+    // The container image serves the web client from this very server, so the
+    // app's origin is whatever host it was reached under — not something an
+    // operator should have to list in CORS_ORIGINS.
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/friend-requests",
+      headers: {
+        cookie: `kirai_session=${user.token}`,
+        host: "kirai.example.org",
+        origin: "http://kirai.example.org",
+      },
+      payload: { handle: "irgendwer" },
+    });
+    expect(response.statusCode).toBe(404);
+    expect(response.json().error).toBe("user_not_found");
+  });
+
+  it("still rejects a foreign origin that merely resembles the host", async () => {
+    const user = await registerUser(app);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/friend-requests",
+      headers: {
+        cookie: `kirai_session=${user.token}`,
+        host: "kirai.example.org",
+        origin: "http://kirai.example.org.angreifer.test",
+      },
+      payload: { handle: "irgendwer" },
+    });
+    expect(response.statusCode).toBe(403);
+    expect(response.json().error).toBe("bad_origin");
+  });
 });
