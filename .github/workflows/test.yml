@@ -12,6 +12,12 @@ concurrency:
 
 jobs:
   test:
+    # A pull request from this repository repeats the push above commit for
+    # commit, which would run the whole suite twice for every change. Fork pull
+    # requests raise no push event here, so those still need this trigger.
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
 
     services:
