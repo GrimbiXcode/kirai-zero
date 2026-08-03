@@ -174,6 +174,42 @@ test("a member can export their data and delete their account", async ({
   await expect(page.getByRole("alert")).toBeVisible();
 });
 
+test("a new account is reminded to confirm, and a forgotten password has a way back", async ({
+  page,
+}) => {
+  const handle = `dora${Date.now().toString(36)}`;
+  await register(page, handle, "Dora");
+
+  // A reminder, never a barrier: the account works while it sits there.
+  await expect(
+    page.getByText(/E-Mail-Adresse ist noch nicht bestätigt/),
+  ).toBeVisible();
+  await addPreference(page, "Koriander", "Koriander", "Mag ich nicht");
+  await expect(
+    page.getByRole("region", { name: "Mag ich nicht" }).getByText("Koriander"),
+  ).toBeVisible();
+
+  await logout(page);
+
+  // The confirmation must read the same for a registered address and an
+  // unknown one — otherwise the form tells strangers who has an account here.
+  const answers: (string | null)[] = [];
+  for (const address of [`${handle}@example.org`, "niemand@example.org"]) {
+    await page.goto("/passwort-vergessen");
+    await page.getByLabel("E-Mail").fill(address);
+    await page.getByRole("button", { name: "Link anfordern" }).click();
+    const notice = page.getByRole("status");
+    await expect(notice).toBeVisible();
+    answers.push(await notice.textContent());
+  }
+  expect(answers[0]).toBe(answers[1]);
+
+  // A link that lost its token says so instead of showing an empty form.
+  await page.goto("/passwort-neu");
+  await expect(page.getByRole("alert")).toContainText("unvollständig");
+  await expect(page.getByLabel("Neues Passwort")).toHaveCount(0);
+});
+
 test("a private profile can be linked and then shows what holds up", async ({
   page,
 }) => {

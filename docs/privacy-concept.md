@@ -20,7 +20,7 @@ nicht abfliessen.
 | | |
 |---|---|
 | **Zweck** | Authentifizierung, Zuordnung der Präferenzen zu einer Person |
-| **Datenkategorien** | E-Mail-Adresse, Handle, Anzeigename, Passwort-Hash (argon2id), Sprache, Zeitpunkt der Erstellung und letzten Änderung |
+| **Datenkategorien** | E-Mail-Adresse, Handle, Anzeigename, Passwort-Hash (argon2id), Sprache, Zeitpunkt der Bestätigung der E-Mail-Adresse, Zeitpunkt der Erstellung und letzten Änderung |
 | **Betroffene** | Registrierte Nutzerinnen und Nutzer |
 | **Rechtsgrundlage** | Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung) |
 | **Empfänger** | Keine. Nur der Betreiber, Hosting in EU/CH |
@@ -135,6 +135,46 @@ folgen zwei Fragen, die vor Produktivstart anwaltlich zu klären sind:
 - Die Notizen stehen im Export ihres Erstellers und verschwinden mit dessen
   Konto.
 
+### V7 — E-Mail-Token
+
+| | |
+|---|---|
+| **Zweck** | Bestätigung der E-Mail-Adresse und Zurücksetzen eines vergessenen Passworts |
+| **Datenkategorien** | Nutzer-ID, Zweck (`verify_email` oder `password_reset`), SHA-256-Hash des Tokens, Ablauf- und Erstellungszeitpunkt |
+| **Rechtsgrundlage** | Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung: Zugang zum Konto) |
+| **Empfänger** | Der Mailanbieter, der die Nachricht zustellt — siehe unten |
+| **Löschung** | Beim Einlösen sofort; beim Ausstellen eines neuen Tokens desselben Zwecks; abgelaufene stündlich durch denselben Job wie die Sitzungen; beim Löschen des Kontos in derselben Transaktion wie die Sitzungen |
+| **Tabelle** | `email_tokens` |
+
+**Kein Zustellprotokoll.** Die Tabelle hält fest, *dass* ein Token offen ist,
+nicht *wer wann angeschrieben wurde*. Es gibt keine Empfängerspalte, keinen
+Versandzeitpunkt und keine IP-Adresse; ein Test in
+`apps/api/test/mail.test.ts` prüft, dass diese Spalten nicht existieren. Der
+Token selbst steht wie ein Sitzungstoken nur als SHA-256 in der Datenbank — im
+Klartext existiert er ausschliesslich im Postfach der betroffenen Person.
+
+### Mailversand als Auftragsverarbeitung
+
+Die Anwendung verschickt drei Nachrichten, alle ausgelöst durch eine Handlung
+der betroffenen Person selbst:
+
+1. **Bestätigung der Adresse** nach der Registrierung und auf Anforderung
+2. **Link zum Zurücksetzen** des Passworts, gültig eine Stunde, einmal verwendbar
+3. **Hinweis auf einen erfolgten Reset** — ohne Link, ohne Token
+
+Es gibt keine Werbung, keinen Newsletter und keine Benachrichtigungen über
+Freundschaftsanfragen. Der Versand läuft über SMTP gegen einen selbst
+betriebenen oder gemieteten Mailserver; ein Mail-API-Anbieter wurde bewusst
+nicht gewählt (siehe `docs/decisions.md`, Eintrag 16). Der Betreiber dieses
+Mailservers ist **Auftragsverarbeiter** und braucht einen AVV. Er sieht
+Empfängeradresse und Betreff; die Nachrichten selbst enthalten nur Anrede und
+Link, keine Präferenzen, keine Freundschaften, kein Passwort.
+
+**Zustelldaten fallen ausserhalb dieser Anwendung an.** Mailserver führen Logs
+über zugestellte Nachrichten. Deren Aufbewahrung ist Sache des gewählten
+Anbieters und gehört in den AVV; die Anwendung selbst schreibt weder Empfänger
+noch Zeitpunkt in ihre eigenen Logs.
+
 ## Betroffenenrechte
 
 | Recht | Umsetzung |
@@ -162,6 +202,8 @@ Beim Löschen des Kontos läuft in **einer Transaktion**:
 3. Sitzungen, Freundschaften und Freundschaftsanfragen werden entfernt. Die
    Sichtbarkeit für andere endet damit in derselben Sekunde, nicht erst mit
    dem Löschjob.
+4. Offene E-Mail-Token werden entfernt. Ein Reset-Link, der noch in einem
+   Postfach liegt, darf das Konto nicht überleben.
 
 Ein Hintergrundjob löscht die markierte Zeile endgültig; er läuft beim Start
 und danach stündlich. **Zugesagte Obergrenze: 24 Stunden**, real unter einer
@@ -196,9 +238,10 @@ Deshalb gilt verbindlich:
 3. Die Mail nennt den Vorgang, den Stand und die Handlungsmöglichkeit: Konto
    erneut löschen oder sich beim Support melden.
 
-Der Versand erfolgt heute manuell als Teil des Restore-Vorgangs; die App
-verschickt im Normalbetrieb keine E-Mails. Sobald das automatisiert wird, ist
-der Mailanbieter ein Auftragsverarbeiter und braucht einen AVV.
+Der Versand erfolgt manuell als Teil des Restore-Vorgangs. Die Anwendung hat
+zwar einen Mailausgang (siehe V7), aber ein Restore ist ein begleiteter
+Einzelfall mit einem Text, den vorher jemand liest — dafür gibt es keinen
+Automatismus und soll es keinen geben.
 
 #### Textvorlage
 
@@ -225,6 +268,12 @@ der Mailanbieter ein Auftragsverarbeiter und braucht einen AVV.
 - Passwörter: argon2id, 19 MiB Speicher, 2 Iterationen (OWASP-Empfehlung)
 - Sitzungstoken: 32 Byte aus `crypto.randomBytes`, in der Datenbank nur als
   SHA-256-Hash — ein Datenbankleck gibt keine nutzbaren Sitzungen preis
+- E-Mail-Token: dasselbe Verfahren, zusätzlich einmalig und befristet
+  (Bestätigung 7 Tage, Passwort-Reset 1 Stunde). Ein erfolgreicher Reset
+  beendet alle Sitzungen des Kontos
+- Die Anfrage für einen Reset beantwortet die API immer gleich, unabhängig
+  davon, ob es die Adresse gibt — sonst wäre sie eine Auskunft darüber, wer
+  hier ein Konto hat
 - Zugriffskontrolle: eine einzige Stelle (`requireFriendship` in
   `apps/api/src/lib/friendship.ts`), durch Tests abgedeckt
 - Unbeteiligte erhalten 404 statt 403, damit die API die Existenz von Konten
@@ -243,6 +292,8 @@ die freiwillige Risikoeinschätzung in [`dpia.md`](dpia.md).
 
 1. Datenschutzerklärung und Impressum verfassen und im UI verlinken
 2. Auftragsverarbeitungsvertrag mit dem Hoster (Hetzner, Infomaniak, Exoscale)
+   **und mit dem Mailanbieter** — inklusive der Frage, wie lange dessen
+   Zustellprotokolle aufbewahrt werden
 3. Technisch belegen, dass die 90-Tage-Regel für Backups beim gewählten Hoster
    tatsächlich greift
 4. Handlungsfähigkeit Minderjähriger beim Vertragsschluss in den AGB regeln —

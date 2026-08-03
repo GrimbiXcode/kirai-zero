@@ -9,7 +9,8 @@ Geschenke.
 
 ## Was der MVP kann
 
-- Konto anlegen, an- und abmelden
+- Konto anlegen, an- und abmelden; E-Mail-Adresse bestätigen und ein
+  vergessenes Passwort per Mail zurücksetzen
 - Vorlieben und Abneigungen erfassen: Haltung („Liebe ich" bis „Mag ich nicht"),
   optionale Notiz, Sichtbarkeit pro Eintrag — ohne Angabe von Gründen
 - Freundschaftsanfragen senden, annehmen, ablehnen, beenden
@@ -94,6 +95,9 @@ Kern der Anwendung, nicht Beiwerk:
   die selbst erfassten Einträge
 - Keine Analyse, kein Tracking, keine Werbung, keine externen Skripte oder
   Schriften — die API sendet `default-src 'self'`
+- E-Mails gibt es nur drei, alle selbst ausgelöst: Adresse bestätigen, Passwort
+  zurücksetzen, Hinweis auf einen erfolgten Reset. Kein Newsletter, keine
+  Benachrichtigungen
 - Sitzungen ohne IP-Adresse und ohne User-Agent; Logs ohne Client-Adresse
 - Export und Löschung sind im Produkt, nicht auf Anfrage per E-Mail
 
@@ -180,7 +184,21 @@ NODE_ENV=production
 DATABASE_URL=…            # PostgreSQL in EU oder CH
 CORS_ORIGINS=https://…    # Web-Origin, plus capacitor://localhost für iOS
 COOKIE_SECURE=true        # verlangt TLS
+
+SMTP_HOST=…               # Mailserver in EU oder CH
+SMTP_PORT=587             # 465 zusammen mit SMTP_SECURE=true
+SMTP_USER=…
+SMTP_PASSWORD=…
+MAIL_FROM=kirai-zero <noreply@…>
+APP_URL=https://…         # öffentliche Adresse, daraus entstehen die Links
+SUPPORT_EMAIL=…           # optional, steht in der Mail nach einem Reset
 ```
 
-Die Sitzungsbereinigung läuft im API-Prozess selbst (stündlich); ein Cronjob ist
-nicht nötig.
+Ohne `SMTP_HOST` startet die App weiterhin, schreibt die Mails aber nur ins Log
+— dann kann niemand seine Adresse bestätigen oder ein vergessenes Passwort
+zurücksetzen. Ist `SMTP_HOST` gesetzt, sind `MAIL_FROM` und `APP_URL`
+Pflicht; ohne sie verweigert der Prozess den Start, statt Links zu verschicken,
+die ins Leere zeigen.
+
+Die Bereinigung von Sitzungen und abgelaufenen E-Mail-Token läuft im
+API-Prozess selbst (stündlich); ein Cronjob ist nicht nötig.

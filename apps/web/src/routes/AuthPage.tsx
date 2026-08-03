@@ -1,18 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ApiError } from "../api/client";
 import { useLogin, useRegister } from "../api/hooks";
-import { hasTranslation, t } from "../i18n";
-
-/** Maps the API's stable error codes onto translated messages, falling back to
- *  a generic one for codes this screen does not know about. */
-function messageFor(error: unknown): string {
-  if (error instanceof ApiError) {
-    const key = `auth.error.${error.code}`;
-    if (hasTranslation(key)) return t(key);
-  }
-  return t("auth.error.generic");
-}
+import { t } from "../i18n";
+import { messageFor } from "../lib/errorMessage";
 
 export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const navigate = useNavigate();
@@ -136,6 +126,14 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
             </Link>
           )}
         </p>
+
+        {mode === "login" && (
+          <p className="text-center text-sm">
+            <Link className="text-muted underline" to="/passwort-vergessen">
+              {t("auth.login.forgotPassword")}
+            </Link>
+          </p>
+        )}
       </form>
 
       <p className="mt-8 text-xs text-muted">{t("auth.privacyNote")}</p>

@@ -35,6 +35,14 @@ export const FRIEND_REQUEST_STATUSES = [
 ] as const;
 export type FriendRequestStatus = (typeof FRIEND_REQUEST_STATUSES)[number];
 
+/**
+ * What a token mailed to someone's address entitles them to do. One vocabulary
+ * for both, because they share a lifetime, a hashing scheme and a purge job —
+ * the purpose only decides how long the token lives and which route accepts it.
+ */
+export const EMAIL_TOKEN_PURPOSES = ["verify_email", "password_reset"] as const;
+export type EmailTokenPurpose = (typeof EMAIL_TOKEN_PURPOSES)[number];
+
 export function isPositive(stance: Stance): boolean {
   return stance === "love" || stance === "like";
 }

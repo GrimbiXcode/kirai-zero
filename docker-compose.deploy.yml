@@ -27,6 +27,19 @@ services:
       # very container and is same-origin, which the server recognises on its
       # own. Drop this line entirely if you do not ship the mobile apps.
       CORS_ORIGINS: "capacitor://localhost,http://localhost"
+      # Outgoing mail: address confirmation and password reset. Leave SMTP_HOST
+      # empty and the app still runs, but a forgotten password cannot be
+      # recovered — the link only reaches this container's log.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL:-}
+      # The address people reach this installation under; the links in those
+      # mails are built from it.
+      APP_URL: ${APP_URL:-}
     ports:
       # Bound to the loopback interface: the reverse proxy in front of it is
       # the only thing that should reach the app directly.

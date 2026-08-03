@@ -3,13 +3,18 @@ import { sql as raw } from "drizzle-orm";
 import { buildApp } from "../src/app";
 import { createDatabase } from "../src/db/client";
 import { loadEnv } from "../src/env";
+import { memoryMailer, type MemoryMailer } from "../src/lib/mail";
 
 export const TEST_DATABASE_URL =
   process.env.TEST_DATABASE_URL ??
   "postgres://postgres:postgres@localhost:5432/kirai_test";
 
+export const TEST_APP_URL = "http://localhost:5173";
+
 export interface TestContext {
   app: FastifyInstance;
+  /** Every message the app tried to send, in order. */
+  mailer: MemoryMailer;
   close: () => Promise<void>;
 }
 
@@ -28,12 +33,18 @@ export async function createTestApp(
     CORS_ORIGINS: "http://localhost:5173",
     COOKIE_SECURE: "false",
     RATE_LIMIT_ENABLED: options.rateLimit ? "true" : "false",
+    // No SMTP_HOST: nothing leaves the process. APP_URL still has to be right,
+    // because the links in the captured mails are what the tests follow.
+    APP_URL: TEST_APP_URL,
+    SUPPORT_EMAIL: "hilfe@example.org",
   });
   const { db, sql } = createDatabase(TEST_DATABASE_URL, 5);
-  const app = await buildApp({ db, env });
+  const mailer = memoryMailer();
+  const app = await buildApp({ db, env, mailer });
   await app.ready();
   return {
     app,
+    mailer,
     close: async () => {
       await app.close();
       await sql.end();
@@ -50,7 +61,7 @@ export async function createTestApp(
  */
 export async function resetData(app: FastifyInstance): Promise<void> {
   await app.db.execute(
-    raw`TRUNCATE TABLE sessions, preferences, friend_requests, friendships`,
+    raw`TRUNCATE TABLE sessions, email_tokens, preferences, friend_requests, friendships`,
   );
   await app.db.execute(raw`DELETE FROM items WHERE is_curated = false`);
   await app.db.execute(raw`DELETE FROM users`);

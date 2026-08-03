@@ -56,6 +56,26 @@ export const loginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
+/** The token as it appears in the link, before it is hashed for lookup. */
+const emailTokenSchema = z.string().trim().min(1).max(200);
+
+export const emailVerifySchema = z.object({ token: emailTokenSchema });
+export type EmailVerifyInput = z.infer<typeof emailVerifySchema>;
+
+export const passwordResetRequestSchema = z.object({ email: emailSchema });
+export type PasswordResetRequestInput = z.infer<
+  typeof passwordResetRequestSchema
+>;
+
+/** Same password rule as registration: a reset must not be a way around it. */
+export const passwordResetConfirmSchema = z.object({
+  token: emailTokenSchema,
+  password: passwordSchema,
+});
+export type PasswordResetConfirmInput = z.infer<
+  typeof passwordResetConfirmSchema
+>;
+
 export const itemSearchQuerySchema = z.object({
   q: z.string().trim().max(80).optional(),
   kind: itemKindSchema.optional(),
@@ -132,6 +152,9 @@ export interface PublicUser {
 export interface CurrentUser extends PublicUser {
   email: string;
   locale: string;
+  /** Whether the address has been confirmed by following the mailed link. A
+   *  flag rather than the timestamp: the client only ever asks yes or no. */
+  emailVerified: boolean;
   createdAt: string;
 }
 

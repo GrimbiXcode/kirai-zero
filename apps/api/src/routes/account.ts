@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { asc, eq, inArray, or } from "drizzle-orm";
 import {
+  emailTokens,
   friendRequests,
   friendships,
   items,
@@ -140,6 +141,7 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
         handle: viewer.handle,
         displayName: viewer.displayName,
         locale: viewer.locale,
+        emailVerified: viewer.emailVerifiedAt !== null,
         createdAt: viewer.createdAt.toISOString(),
       },
       preferences: prefRows.map((row) =>
@@ -172,6 +174,8 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
    *   handle and the email address for reuse and makes signing in impossible
    * - sessions, friendships and friend requests are deleted outright, so
    *   visibility to other people ends in the same transaction
+   * - pending email tokens go with them: a password reset link still sitting
+   *   in an inbox must not outlive the account it was issued for
    *
    * What is left — the marked row and the preferences hanging off it — is
    * unreachable: the friend profile route needs a friendship and the own list
@@ -195,6 +199,7 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
         .where(eq(users.id, viewer.id));
 
       await tx.delete(sessions).where(eq(sessions.userId, viewer.id));
+      await tx.delete(emailTokens).where(eq(emailTokens.userId, viewer.id));
       // Other people's notes about this account lose their link immediately —
       // the ON DELETE SET NULL would only fire once the purge job runs.
       await tx

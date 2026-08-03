@@ -24,6 +24,9 @@ export function toCurrentUser(user: AuthenticatedUser): CurrentUser {
     displayName: user.displayName,
     email: user.email,
     locale: user.locale,
+    // The flag, not the timestamp: the client asks "show the banner or not",
+    // and when exactly someone clicked a link is nobody's business.
+    emailVerified: user.emailVerifiedAt !== null,
     createdAt: user.createdAt.toISOString(),
   };
 }
