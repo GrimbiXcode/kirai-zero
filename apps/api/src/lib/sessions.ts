@@ -1,7 +1,7 @@
-import { createHash, randomBytes } from "node:crypto";
 import { and, eq, gt, isNull, lt } from "drizzle-orm";
-import type { Database } from "../db/client";
+import type { Database, Executor } from "../db/client";
 import { sessions, users } from "../db/schema";
+import { generateToken, hashToken } from "./tokens";
 
 export const SESSION_COOKIE = "kirai_session";
 export const SESSION_TTL_DAYS = 30;
@@ -15,16 +15,11 @@ export interface AuthenticatedUser {
   displayName: string;
   email: string;
   locale: string;
+  emailVerifiedAt: Date | null;
   createdAt: Date;
 }
 
-function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
-
-export function generateSessionToken(): string {
-  return randomBytes(32).toString("base64url");
-}
+export const generateSessionToken = generateToken;
 
 export function sessionExpiry(from = new Date()): Date {
   return new Date(from.getTime() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
@@ -34,7 +29,7 @@ export async function createSession(
   db: Database,
   userId: string,
 ): Promise<{ token: string; expiresAt: Date }> {
-  const token = generateSessionToken();
+  const token = generateToken();
   const expiresAt = sessionExpiry();
   await db.insert(sessions).values({
     userId,
@@ -58,6 +53,7 @@ export async function resolveSession(
       displayName: users.displayName,
       email: users.email,
       locale: users.locale,
+      emailVerifiedAt: users.emailVerifiedAt,
       createdAt: users.createdAt,
     })
     .from(sessions)
@@ -89,6 +85,7 @@ export async function resolveSession(
     displayName: row.displayName,
     email: row.email,
     locale: row.locale,
+    emailVerifiedAt: row.emailVerifiedAt,
     createdAt: row.createdAt,
   };
 }
@@ -101,7 +98,7 @@ export async function destroySession(
 }
 
 export async function destroyAllSessions(
-  db: Database,
+  db: Executor,
   userId: string,
 ): Promise<void> {
   await db.delete(sessions).where(eq(sessions.userId, userId));

@@ -38,6 +38,9 @@ export function mockApi(routes: Record<string, Handler>): void {
         );
       }
       const body = handler(url, init);
+      // A handler may build its own Response when the test is about a failure
+      // — an expired token, a rate limit — instead of a payload.
+      if (body instanceof Response) return body;
       return new Response(JSON.stringify(body), {
         status: 200,
         headers: { "content-type": "application/json" },

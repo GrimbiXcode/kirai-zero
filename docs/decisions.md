@@ -174,6 +174,10 @@ ist ein seltener, manueller Vorgang. Ein Mailversand dafür aufzubauen hiesse,
 einen weiteren Auftragsverarbeiter einzuführen — für einen Fall, der von Hand
 ohnehin begleitet wird.
 
+*Der letzte Absatz ist durch Eintrag 16 teilweise überholt: die App verschickt
+inzwischen drei E-Mails. Der Restore-Versand bleibt trotzdem manuell — er ist
+ein begleiteter Einzelfall mit einem Text, den jemand vorher liest.*
+
 ## 13. Ein Behälter für beide Fälle, Status berechnet statt gespeichert
 
 Ein Personen-Profil ist die private Notizsammlung eines Nutzers über einen
@@ -249,3 +253,61 @@ Der Preis ist eine Annahme: **eine** Instanz. Mehrere Repliken gegen dieselbe
 Datenbank würden gleichzeitig migrieren; das bräuchte ein Advisory Lock. Wer
 dorthin skaliert, setzt `SKIP_MIGRATIONS=true` und lässt die Migration als
 eigenen Schritt laufen.
+
+## 16. Eigener SMTP-Server für Bestätigung und Passwort-Reset
+
+Bis hierher verschickte die App keine E-Mails (Eintrag 12). Das kostete zwei
+Dinge: die Adresse in `users.email` war ungeprüft, und ein vergessenes Passwort
+bedeutete ein verlorenes Konto — `DELETE /api/me` verlangt eine Sitzung, es gab
+also nicht einmal einen Weg, die Daten loszuwerden. Für einen Dienst, der
+Löschung und Export ins Produkt holt statt sie per Mail anzufragen, ist das
+nicht haltbar.
+
+**SMTP, nicht Resend oder Postmark.** Ein Mail-API-Anbieter wäre in einer
+Stunde eingebaut und würde jede Adresse und jede Betreffzeile durch einen
+weiteren Auftragsverarbeiter mit US-Mutterkonzern schicken — dasselbe Argument
+wie in Eintrag 1, aus dem Authentifizierung hier selbst gebaut ist. Ein
+Mailserver bleibt ein Auftragsverarbeiter und braucht einen AVV, aber er ist
+austauschbar, sitzt wählbar in EU/CH und sieht nur den Umschlag. Ohne
+`SMTP_HOST` läuft ein Log-Transport; in Produktion ist das eine Fehlkonfiguration
+und wird beim Start gewarnt, denn dort haben Token nichts im Log zu suchen.
+
+**Nur Text, kein HTML.** Nichts nachzuladen, kein Zählpixel möglich — dieselbe
+Haltung wie die CSP in Eintrag 6, nur im Postfach.
+
+**Der Link zeigt auf die Webapp und wird per POST eingelöst.** Zwischen
+Mailserver und Postfach sitzen Virenscanner und Link-Vorschauen, die jede URL
+in einer Mail abrufen. Ein `GET /api/auth/verify?token=…` wäre verbraucht,
+bevor jemand klickt. Die Seite hinter `/passwort-neu` bzw.
+`/e-mail-bestaetigen` schickt den Token deshalb selbst weiter.
+
+**Token wie Sitzungstoken.** 32 zufällige Bytes, in der Datenbank nur als
+SHA-256; im Klartext existieren sie ausschliesslich im Postfach. Eine Tabelle
+`email_tokens` für beide Zwecke, ohne `used_at`: Einlösen löscht die Zeile, und
+das Ausstellen eines neuen Tokens löscht die vorherigen desselben Zwecks. Damit
+gilt immer nur der jüngste Link, und zwar einmal — ohne zusätzlichen Zustand,
+den man falsch prüfen kann.
+
+**Eine unbestätigte Adresse sperrt nichts.** Der Nutzen der Bestätigung liegt
+darin, einen Tippfehler zu finden, solange die Person noch da ist; ihn mit einer
+Anmeldeschranke zu erkaufen hiesse, ein Konto an einem Mail im Spam-Ordner
+sterben zu lassen. Sichtbar ist sie als Banner, mehr nicht. Entsprechend läuft
+auch der Passwort-Reset für unbestätigte Adressen — er ist der Weg zurück, nicht
+die Belohnung dafür, vorher geklickt zu haben. Ein erfolgreicher Reset setzt
+`email_verified_at` gleich mit: wer die Mail gelesen hat, hat den Zugriff aufs
+Postfach damit bewiesen.
+
+**`POST /api/auth/password-reset` antwortet immer 204.** Gleicher Status,
+gleicher Body, ob die Adresse existiert oder nicht, und der Versand läuft nach
+der Antwort, damit auch die Zeit nichts verrät. Sonst wäre die Route genau das,
+was Eintrag 5 an anderer Stelle verhindert: eine Auskunft darüber, wer hier ein
+Konto hat.
+
+**Der Reset beendet alle Sitzungen.** Wer sich zurückholt, was ihm gehört, will
+den anderen draussen haben; eine überlebende Sitzung machte den Reset wertlos.
+Der Preis ist eine Neuanmeldung auf jedem Gerät, und die Info-Mail sagt das auch
+so — sie enthält bewusst keinen Link, weil es nichts zu klicken gibt.
+
+Ein Versandfehler kippt nie eine Anfrage. Sonst scheiterte eine Registrierung an
+einem streikenden Relay, nachdem das Konto schon existiert, und ein 500 auf der
+Reset-Route verriete genau das, was sie nicht sagen soll.

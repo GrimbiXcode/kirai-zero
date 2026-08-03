@@ -58,6 +58,9 @@ export default defineConfig({
         NODE_ENV: "development",
         CORS_ORIGINS: WEB_URL,
         COOKIE_SECURE: "false",
+        // No SMTP_HOST, so the mails only reach the API's log. The URL still
+        // has to be the one the suite browses, since the links are built here.
+        APP_URL: WEB_URL,
         // The suite registers several accounts from one address in seconds.
         RATE_LIMIT_ENABLED: "false",
       },

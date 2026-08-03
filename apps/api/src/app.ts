@@ -11,6 +11,7 @@ import type { ApiErrorBody } from "shared";
 import type { Database } from "./db/client";
 import type { Env } from "./env";
 import { AppError } from "./lib/errors";
+import { createMailer, type Mailer } from "./lib/mail";
 import type { AuthenticatedUser } from "./lib/sessions";
 import { accountRoutes } from "./routes/account";
 import { authRoutes } from "./routes/auth";
@@ -23,6 +24,7 @@ declare module "fastify" {
   interface FastifyInstance {
     db: Database;
     appEnv: Env;
+    mailer: Mailer;
   }
   interface FastifyRequest {
     currentUser?: AuthenticatedUser;
@@ -32,11 +34,15 @@ declare module "fastify" {
 export interface BuildAppOptions {
   db: Database;
   env: Env;
+  /** Injected by the test suites, which assert against a mailer that keeps the
+   *  messages instead of sending them. Built from `env` when absent. */
+  mailer?: Mailer;
 }
 
 export async function buildApp({
   db,
   env,
+  mailer,
 }: BuildAppOptions): Promise<FastifyInstance> {
   const app = Fastify({
     logger:
@@ -62,7 +68,13 @@ export async function buildApp({
 
   app.decorate("db", db);
   app.decorate("appEnv", env);
+  app.decorate("mailer", mailer ?? createMailer(env, app.log));
   app.decorateRequest("currentUser", undefined);
+
+  // Pooled SMTP connections would otherwise keep the process alive on shutdown.
+  app.addHook("onClose", async (instance) => {
+    await instance.mailer.close();
+  });
 
   await app.register(helmet, {
     contentSecurityPolicy: {

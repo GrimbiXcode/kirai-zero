@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import type { CurrentUser } from "shared";
 import { useFriendRequests } from "../api/hooks";
 import { t, type TranslationKey } from "../i18n";
+import { VerifyEmailBanner } from "./VerifyEmailBanner";
 
 const TABS: { to: string; label: TranslationKey }[] = [
   { to: "/", label: "nav.lists" },
@@ -28,6 +29,8 @@ export function Layout({
         </span>
         <span className="text-sm text-muted">@{user.handle}</span>
       </header>
+
+      {!user.emailVerified && <VerifyEmailBanner />}
 
       <main className="flex-1 px-4 pb-24">{children}</main>
 

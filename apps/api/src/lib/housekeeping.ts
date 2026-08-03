@@ -1,6 +1,7 @@
 import { isNotNull } from "drizzle-orm";
 import type { Database } from "../db/client";
 import { users } from "../db/schema";
+import { purgeExpiredEmailTokens } from "./email-tokens";
 import { purgeExpiredSessions } from "./sessions";
 
 /**
@@ -30,6 +31,7 @@ export async function runHousekeeping(
   db: Database,
 ): Promise<HousekeepingResult> {
   await purgeExpiredSessions(db);
+  await purgeExpiredEmailTokens(db);
   const purgedAccounts = await purgeDeletedAccounts(db);
   return { purgedAccounts };
 }

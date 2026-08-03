@@ -10,6 +10,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import {
+  EMAIL_TOKEN_PURPOSES,
   FRIEND_REQUEST_STATUSES,
   ITEM_KINDS,
   STANCES,
@@ -22,6 +23,10 @@ export const visibilityEnum = pgEnum("visibility", VISIBILITIES);
 export const friendRequestStatusEnum = pgEnum(
   "friend_request_status",
   FRIEND_REQUEST_STATUSES,
+);
+export const emailTokenPurposeEnum = pgEnum(
+  "email_token_purpose",
+  EMAIL_TOKEN_PURPOSES,
 );
 
 /**
@@ -38,6 +43,14 @@ export const users = pgTable(
     handle: text("handle").notNull(),
     displayName: text("display_name").notNull(),
     locale: text("locale").notNull().default("de"),
+    /**
+     * When the address was confirmed by following the mailed link. Null means
+     * unconfirmed, which is where every account starts and where it may stay —
+     * nothing is locked behind it. Its job is to catch a typo while the person
+     * is still sitting there, rather than months later when the address is the
+     * only way back into the account.
+     */
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
     /**
      * Set when someone deletes their account. The row survives only until the
      * next housekeeping run erases it; identifying fields are already
@@ -82,6 +95,37 @@ export const sessions = pgTable(
   (table) => [
     uniqueIndex("sessions_token_hash_key").on(table.tokenHash),
     index("sessions_user_id_idx").on(table.userId),
+  ],
+);
+
+/**
+ * Tokens mailed to a user's address, for confirming that address and for
+ * setting a new password. Stored as a SHA-256 hash exactly like session
+ * tokens: the readable value exists in one place only, the person's inbox, and
+ * a database leak yields nothing that can be redeemed.
+ *
+ * One table for both purposes — they share a lifetime, a hashing scheme and a
+ * purge job. There is deliberately no `used_at`: redeeming deletes the row,
+ * and issuing a token drops the account's earlier ones of the same purpose, so
+ * "only the newest link works, and only once" needs no extra state to check.
+ */
+export const emailTokens = pgTable(
+  "email_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    purpose: emailTokenPurposeEnum("purpose").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("email_tokens_token_hash_key").on(table.tokenHash),
+    index("email_tokens_user_purpose_idx").on(table.userId, table.purpose),
   ],
 );
 
@@ -265,5 +309,6 @@ export type PersonEntryRow = typeof personEntries.$inferSelect;
 export type ItemRow = typeof items.$inferSelect;
 export type PreferenceRow = typeof preferences.$inferSelect;
 export type SessionRow = typeof sessions.$inferSelect;
+export type EmailTokenRow = typeof emailTokens.$inferSelect;
 export type FriendRequestRow = typeof friendRequests.$inferSelect;
 export type FriendshipRow = typeof friendships.$inferSelect;

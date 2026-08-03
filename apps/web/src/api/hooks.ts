@@ -113,6 +113,61 @@ export function useLogout() {
   });
 }
 
+/** Confirms the address behind a mailed link. Refreshes the session so the
+ *  banner disappears without a reload — the response already carries the
+ *  updated user, so there is nothing to re-fetch. */
+export function useVerifyEmail() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (token: string) =>
+      api<{ user: CurrentUser }>("/api/auth/verify-email", {
+        method: "POST",
+        body: { token },
+      }),
+    onSuccess: (data) => {
+      if (queryClient.getQueryData(queryKeys.session)) {
+        queryClient.setQueryData(queryKeys.session, data.user);
+      }
+    },
+  });
+}
+
+export function useResendVerification() {
+  return useMutation({
+    mutationFn: () =>
+      api<void>("/api/auth/resend-verification", { method: "POST" }),
+  });
+}
+
+/** Resolves the same way whether or not the address belongs to an account —
+ *  the API answers 204 either way, and the screen must not imply otherwise. */
+export function useRequestPasswordReset() {
+  return useMutation({
+    mutationFn: (email: string) =>
+      api<void>("/api/auth/password-reset", { method: "POST", body: { email } }),
+  });
+}
+
+/**
+ * Finishes a reset. The server ends every session in the process, so whatever
+ * this client still held is stale: the local token goes and the caller sends
+ * the person to the sign-in screen.
+ */
+export function useConfirmPasswordReset() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { token: string; password: string }) =>
+      api<void>("/api/auth/password-reset/confirm", {
+        method: "POST",
+        body: input,
+      }),
+    onSuccess: async () => {
+      await clearToken();
+      await signOutLocally(queryClient);
+    },
+  });
+}
+
 export function useItemSearch(query: string, kind?: ItemKind) {
   const trimmed = query.trim();
   return useQuery({

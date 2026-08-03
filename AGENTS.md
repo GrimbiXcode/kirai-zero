@@ -39,7 +39,12 @@ than deleted — the history of a decision matters as much as its outcome.
    sessions or logs, no user agent, no phone number, no date of birth. Adding a
    column means adding an entry to the processing record in
    `docs/privacy-concept.md`.
-5. **Do not add a field asking *why* someone dislikes something.** That field
+5. **Mail is transactional only.** Three messages exist — confirm the address,
+   reset a password, report a completed reset — and every one is triggered by
+   the account holder. No notifications, no digests, no delivery log. The
+   password reset route answers the same whether or not the address is
+   registered; see `docs/decisions.md`, entry 16.
+6. **Do not add a field asking *why* someone dislikes something.** That field
    existed and was removed on purpose; it made the app process health data and
    beliefs under Art. 9 GDPR. See `docs/decisions.md`, entry 11.
 

@@ -34,7 +34,7 @@ try {
   // Not TRUNCATE ... CASCADE on users: items.created_by references users, so
   // cascading would take the catalogue with it.
   await db.execute(
-    raw`TRUNCATE TABLE sessions, preferences, friend_requests, friendships`,
+    raw`TRUNCATE TABLE sessions, email_tokens, preferences, friend_requests, friendships`,
   );
   await db.execute(raw`DELETE FROM items WHERE is_curated = false`);
   await db.execute(raw`DELETE FROM users`);
